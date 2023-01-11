@@ -49,7 +49,7 @@ As you can see, we have an user, signing a lease for a specific rooms.
 For each of this entities, we want to have the related entities on Stripe:
 
 - For each `user` we want a `customer` on Stripe containing all the relevant informations contained in our users table. 
-- For each `room` we want a `product with a price` on Stripe, you can found the value of the price in the `baseRent` column.
+- For each `room` we want a `product with a price` on Stripe, you can found the value of the price in the `rent` column.
 - For each `lease` we want an `subscription` on Stripe making the link between the customer and the product.
 
 The goal was to recreate all the missing entities on Stripe, get the id in the response, and store the related id in our database:
