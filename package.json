@@ -4,7 +4,8 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "start": "npx ts-node src/index.ts"
+    "start": "npx ts-node src/index.ts",
+    "generate-types": "npx @databases/mysql-schema-cli --database mysql://cohabs:qe*aV9qapYW*cmj9@localhost:3307/ --schemaName cohabs_onboarding --directory src/__generated__"
   },
   "dependencies": {
     "dotenv": "^16.0.3",
