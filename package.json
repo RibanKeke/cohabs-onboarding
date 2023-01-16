@@ -5,7 +5,8 @@
   "license": "MIT",
   "scripts": {
     "start": "npx ts-node src/index.ts",
-    "generate-types": "npx @databases/mysql-schema-cli --database mysql://cohabs:qe*aV9qapYW*cmj9@localhost:3307/ --schemaName cohabs_onboarding --directory src/__generated__"
+    "generate-types": "npx @databases/mysql-schema-cli --database mysql://cohabs:qe*aV9qapYW*cmj9@localhost:3307/ --schemaName cohabs_onboarding --directory src/__generated__",
+    "restore-db": "mysql -u cohabs -P 3307 -h  127.0.0.1 -D cohabs_onboarding -p < ./assets/cohabs_onboarding.dump"
   },
   "dependencies": {
     "dotenv": "^16.0.3",
