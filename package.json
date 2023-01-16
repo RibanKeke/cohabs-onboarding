@@ -6,14 +6,19 @@
   "scripts": {
     "start": "npx ts-node src/index.ts",
     "generate-types": "npx @databases/mysql-schema-cli --database mysql://cohabs:qe*aV9qapYW*cmj9@localhost:3307/ --schemaName cohabs_onboarding --directory src/__generated__",
-    "restore-db": "mysql -u cohabs -P 3307 -h  127.0.0.1 -D cohabs_onboarding -p < ./assets/cohabs_onboarding.dump"
+    "restore-db": "mysql -u cohabs -P 3307 -h  127.0.0.1 -D cohabs_onboarding -p < ./assets/cohabs_support_challenge_2.dump"
   },
   "dependencies": {
+    "@databases/mysql": "^5.2.1",
+    "@databases/mysql-typed": "^1.0.0",
     "dotenv": "^16.0.3",
     "mysql": "^2.18.1",
-    "stripe": "^11.3.0"
+    "prompts": "^2.4.2",
+    "stripe": "^11.3.0",
+    "tslog": "^4.7.1"
   },
   "devDependencies": {
-    "@types/mysql": "2.15.21"
+    "@types/mysql": "2.15.21",
+    "@types/prompts": "^2.4.2"
   }
 }
