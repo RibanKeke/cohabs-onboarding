@@ -79,12 +79,12 @@ async function processMissingTransfersOnCharges(db: ConnectionPool, stripe: Stri
             return stripe.transfers.create({
                 amount: originalAmount,
                 currency: 'eur',
-                description: `Manual transfer from ${payment.houseName} - ${payment.houseName} lease:${payment.leaseId} -> to group: ${payment.stripeChargeId}`,
-                destination: stripeAccount,
+                description: `Manual transfer from ${payment.houseName} - ${payment.houseName} lease:${payment.leaseId} -> to group: ${house.transferGroup}`,
+                destination: payment.stripeAccountId,
                 transfer_group: house.transferGroup,
             });
         })).then(values => {
-            log.info('SUCCESFULL: All tranfers are executed', values);
+            log.info('SUCCESFULL: All tranfers are executed', values.length);
         }).catch(err => {
             log.error('Failed transfer:', err.message);
         });
