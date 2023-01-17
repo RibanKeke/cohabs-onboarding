@@ -2,7 +2,7 @@ import * as dotenv from 'dotenv';
 dotenv.config({ path: '.env' });
 
 import Stripe from 'stripe';
-import { updateStripeSubscriptionMissingLink, processMissingTransfersOnCharges } from './commands/stripe.commands';
+import { processMissingTransfersOnCharges } from './commands/stripe.commands';
 import prompts from 'prompts';
 import { Logger } from 'tslog';
 import { initDatabase } from './database';
@@ -23,6 +23,7 @@ async function initStripe(): Promise<Stripe> {
     database: 'cohabs_onboarding'
   });
 
+  // Prompt user to select command to execute
   const commands = await prompts<'choice'>({
     type: 'select',
     name: 'choice',

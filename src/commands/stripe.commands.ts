@@ -4,12 +4,6 @@ import Stripe from "stripe";
 import { Logger } from "tslog";
 import { houses } from "../database";
 
-async function updateStripeSubscriptionMissingLink(db: ConnectionPool, stripe: Stripe, commit: boolean): Promise<void> {
-    const log = new Logger();
-    const payments = (await stripe.paymentIntents.list()).data.filter((value) => value.transfer_group === null);
-    console.log('Payments', payments)
-}
-
 async function listPaymentByHouse(db: ConnectionPool) {
     const availableHouses = (await houses(db).find().all()).map(c => ({
         houseName: c.name,
@@ -54,7 +48,12 @@ async function listPaymentByHouse(db: ConnectionPool) {
 
 }
 
-
+/**
+ * Create tranfers for payments missing a transfer group in stripe.
+ * @param db Connection Pool fo the database,
+ * @param stripe Stripe object
+ * @param stripeAccount Main stripeAccountId
+ */
 async function processMissingTransfersOnCharges(db: ConnectionPool, stripe: Stripe, stripeAccount: string): Promise<void> {
     const log = new Logger();
     const charges = (await stripe.charges.list()).data.filter(s => s.transfer_group === null);
@@ -96,4 +95,4 @@ async function processMissingTransfersOnCharges(db: ConnectionPool, stripe: Stri
     }
 }
 
-export { updateStripeSubscriptionMissingLink, processMissingTransfersOnCharges };
+export { processMissingTransfersOnCharges };
