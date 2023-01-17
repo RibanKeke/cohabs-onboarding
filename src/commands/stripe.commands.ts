@@ -4,11 +4,12 @@ import Stripe from "stripe";
 import { Logger } from "tslog";
 import { houses } from "../database";
 
+type PaymentProcess = { amount: string, stripeChargeId: string, houseName: string, leaseId: string, stripeAccountId: string, transferGroup: string };
+
 async function listPaymentByHouse(db: ConnectionPool) {
     const availableHouses = (await houses(db).find().all()).map(c => ({
         houseName: c.name,
         stripeAccountId: c.stripeAccountId,
-        transferGroup: `FIX TRANSFER PAYMEMT TO HOUSE ${c.name} - AccountId: ${c.stripeAccountId}`
     }));
     const { choice }: { choice: number } = await prompts<'choice'>({
         type: 'select',
@@ -44,8 +45,28 @@ async function listPaymentByHouse(db: ConnectionPool) {
                                                 h.name = ${house.houseName} 
                                         ) hl on
                                             p.leaseId = hl.leaseId;`)
-    return { payments: dbPayments as Array<{ amount: string, stripeChargeId: string, houseName: string, leaseId: string, stripeAccountId: string }>, house };
+    return { payments: dbPayments as Array<PaymentProcess> };
 
+}
+
+/**
+ * Create a new tranfer and update linked charge by adding the transfer_group
+ * @param payment 
+ * @param originalAmount 
+ * @param stripe 
+ */
+async function executeUnprocessedTransfer(payment: PaymentProcess, originalAmount: number | undefined, stripe: Stripe) {
+    await stripe.transfers.create({
+        amount: originalAmount,
+        currency: 'eur',
+        description: `Manual transfer from ${payment.houseName} - ${payment.houseName} lease:${payment.leaseId} -> to group: ${payment.transferGroup}`,
+        destination: payment.stripeAccountId,
+        transfer_group: payment.transferGroup,
+    });
+
+    await stripe.charges.update(payment.stripeChargeId, {
+        transfer_group: payment.transferGroup
+    })
 }
 
 /**
@@ -59,11 +80,11 @@ async function processMissingTransfersOnCharges(db: ConnectionPool, stripe: Stri
     const charges = (await stripe.charges.list()).data.filter(s => s.transfer_group === null);
     const untransferedChargesIds = charges.map(c => c.id);
 
-    const { payments, house } = await listPaymentByHouse(db);
+    const { payments } = await listPaymentByHouse(db);
 
     const notTranfered = payments.filter(p => untransferedChargesIds.includes(p.stripeChargeId));
 
-    log.warn(`Payments to be transfered ${house.houseName} - count ${notTranfered.length}`);
+    log.warn(`Payments to be transfered ${notTranfered[0]?.houseName} - count ${notTranfered.length}`);
     console.table(notTranfered);
 
     const { confirm } = await prompts<'confirm'>({
@@ -76,13 +97,7 @@ async function processMissingTransfersOnCharges(db: ConnectionPool, stripe: Stri
         log.warn('Changes submitted to stripe');
         await Promise.all(notTranfered.map(payment => {
             const originalAmount = charges.find(c => c.id === payment.stripeChargeId)?.amount;
-            return stripe.transfers.create({
-                amount: originalAmount,
-                currency: 'eur',
-                description: `Manual transfer from ${payment.houseName} - ${payment.houseName} lease:${payment.leaseId} -> to group: ${house.transferGroup}`,
-                destination: payment.stripeAccountId,
-                transfer_group: house.transferGroup,
-            });
+            return executeUnprocessedTransfer(payment, originalAmount, stripe)
         })).then(values => {
             log.info('SUCCESFULL: All tranfers are executed', values.length);
         }).catch(err => {
@@ -90,7 +105,7 @@ async function processMissingTransfersOnCharges(db: ConnectionPool, stripe: Stri
         });
     }
     else {
-        log.info(`Skipped tranfers operations for ${house.houseName} - tranferGroup:${house.transferGroup} - stripeAccountId:${house.stripeAccountId} - count: ${notTranfered.length}`)
+        log.info(`Skipped tranfer operations for ${notTranfered[0]?.houseName} - tranferGroup:${notTranfered[0]?.transferGroup} - stripeAccountId:${notTranfered[0]?.stripeAccountId} - count: ${notTranfered.length}`)
         console.table(notTranfered.map(c => ({ house: c.houseName, amount: c.amount, stripeChargeId: c.stripeChargeId, leaseId: c.leaseId } as Partial<typeof payments[0]>)));
     }
 }
