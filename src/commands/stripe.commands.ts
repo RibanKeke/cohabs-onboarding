@@ -1,5 +1,4 @@
 import { ConnectionPool, sql } from "@databases/mysql";
-import { anyOf } from "@databases/mysql-typed";
 import prompts from "prompts";
 import Stripe from "stripe";
 import { Logger } from "tslog";
@@ -12,8 +11,6 @@ async function updateStripeSubscriptionMissingLink(db: ConnectionPool, stripe: S
 }
 
 async function listPaymentByHouse(db: ConnectionPool) {
-    const housesDefault = [{ name: 'Flagey 10', transferGroup: 'NEW TRANSFER TO FIX PAYMENTS Flagey 10' }, { name: 'Parvis 69', transferGroup: 'NEW TRANSFER TO FIX PAYMENTS PARVIS 69' }];
-
     const availableHouses = (await houses(db).find().all()).map(c => ({
         houseName: c.name,
         stripeAccountId: c.stripeAccountId,
@@ -79,16 +76,19 @@ async function processMissingTransfersOnCharges(db: ConnectionPool, stripe: Stri
     if (confirm) {
         log.warn('Changes submitted to stripe');
         await Promise.all(notTranfered.map(payment => {
+            const originalAmount = charges.find(c => c.id === payment.stripeChargeId)?.amount;
             return stripe.transfers.create({
-                amount: Number(payment.amount),
+                amount: originalAmount,
                 currency: 'eur',
                 description: `Manual transfer from ${payment.houseName} - ${payment.houseName} lease:${payment.leaseId} -> to group: ${payment.stripeChargeId}`,
                 destination: stripeAccount,
                 transfer_group: house.transferGroup,
             });
         })).then(values => {
-            console.log(values);
-        }).catch()
+            log.info('SUCCESFULL: All tranfers are executed', values);
+        }).catch(err => {
+            log.error('Failed transfer:', err.message);
+        });
     }
     else {
         log.info(`Skipped tranfers operations for ${house.houseName} - tranferGroup:${house.transferGroup} - stripeAccountId:${house.stripeAccountId} - count: ${notTranfered.length}`)
