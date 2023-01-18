@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { Users } from "../../database/database";
+import { Users } from "../../database";
 import * as DatabaseUsers from "../../database/users";
 import * as StripeService from "../../stripe";
 import { checkStripeUsers, syncStripeUser } from "./stripe.actions";

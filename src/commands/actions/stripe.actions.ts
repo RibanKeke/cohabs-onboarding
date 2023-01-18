@@ -1,7 +1,6 @@
 
 import Stripe from "stripe";
-import { Users } from "../../database/database";
-import { findUserByStripeCustomerId, updateUser } from "../../database/users";
+import { findUserByStripeCustomerId, updateUser, Users } from "../../database";
 import { UpdateResult, UserExecutionRecord, UsersSummary } from "../../interfaces/commands.interface";
 import { NewStripeCustomer, createStripeCustomer } from "../../stripe";
 

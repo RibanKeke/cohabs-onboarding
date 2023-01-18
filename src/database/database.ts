@@ -1,17 +1,5 @@
 
 import createConnectionPool, { ConnectionPool } from '@databases/mysql';
-import DatabaseSchema, { serializeValue } from '../__generated__';
-import tables from '@databases/mysql-typed';
-
-const { houses, leases, payments, users, rooms } = tables<DatabaseSchema>({
-    serializeValue,
-});
-
-type Houses = DatabaseSchema['houses']['record'];
-type Leases = DatabaseSchema['leases']['record'];
-type Rooms = DatabaseSchema['leases']['record'];
-type Users = DatabaseSchema['users']['record'];
-
 
 
 class DatabaseService {
@@ -48,4 +36,4 @@ class DatabaseService {
     }
 }
 
-export { DatabaseService, houses, leases, payments, users, rooms, Houses, Leases, Rooms, Users }
+export { DatabaseService }

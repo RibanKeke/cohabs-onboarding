@@ -1,7 +1,5 @@
-import { ConnectionPool, Transaction } from "@databases/mysql";
-import { DatabaseService, users, Users } from "./database";
-
-
+import { users, Users } from ".";
+import { DatabaseService } from "./database";
 
 async function updateUser(id: string, updateValues: Partial<Users>) {
     const db = DatabaseService.getDb();
