@@ -4,11 +4,11 @@
  */
 
 export default {
-  clearMocks: true,
-  roots: ["<rootDir>/src"],
+  roots: ['<rootDir>/src'],
   automock: false,
-  preset: "jest-mysql",
   transform: {
-    "^.+\\.(ts)?$": "ts-jest",
+    '^.+\\.(ts)?$': 'ts-jest',
   },
+  testRegex: './*.spec|e2e|test.(ts)?$',
+  moduleFileExtensions: ['ts', 'js', 'json', 'node'],
 };

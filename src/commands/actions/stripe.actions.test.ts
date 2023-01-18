@@ -1,24 +1,10 @@
-import createConnectionPool from "@databases/mysql";
 import Stripe from "stripe";
-import { initDatabase, Users } from "../../database/database";
+import { Users } from "../../database/database";
+import * as DatabaseUsers from "../../database/users";
+import * as StripeService from "../../stripe";
 import { checkStripeUsers, syncStripeUser } from "./stripe.actions";
 
-
-jest.doMock('stripe', () => {
-    return jest.fn(() => ({
-        customers: {
-            create: jest.fn(() => Promise.resolve({
-                id: 'new_stripe_user',
-                name: "Jest_User",
-                currency: "sgd",
-                description: "Jest User Account created",
-            })),
-        },
-    }));
-});
-
-
-const defaultStripeCustomer: Stripe.Customer = {
+const testStripeCustomer: Stripe.Customer = {
     id: 'test',
     balance: 100,
     created: Date.now(),
@@ -37,7 +23,7 @@ const defaultStripeCustomer: Stripe.Customer = {
     shipping: null
 }
 
-const defaultCohabUser: Users = {
+const testCohabUser: Users = {
     about: null,
     active: 1,
     address: 'Boulevard de la decouverte',
@@ -80,13 +66,13 @@ const defaultCohabUser: Users = {
 }
 
 function getTestStripeCustomers(ids: Array<string>) {
-    return ids.map((id) => ({ ...defaultStripeCustomer, id }))
+    return ids.map((id) => ({ ...testStripeCustomer, id }))
 }
 const randomId = () => Math.floor(100000 + Math.random() * 900000);
 
 function getTestCohabUsers(stripeCustomerIds: Array<string | null>) {
     return stripeCustomerIds.map(id => ({
-        ...defaultCohabUser, id: String(randomId()), stripeCustomerId: id
+        ...testCohabUser, id: String(randomId()), stripeCustomerId: id
     }))
 }
 
@@ -98,39 +84,33 @@ describe('Stripe Users', () => {
         const cohabUsers = [...getTestCohabUsers(validIds), ...getTestCohabUsers(missingIds), ...getTestCohabUsers(invalidIds)];
         const stripeCustomers = [...getTestStripeCustomers(validIds)];
         const usersSummary = await checkStripeUsers(cohabUsers, stripeCustomers);
-        //Check the right count of invalid ids
         expect(Object.keys(usersSummary.invalid).length).toEqual(1);
-
-        //Check if the invalidId is included in the invalid count
         expect(Object.values(usersSummary.invalid).map(v => v.user.stripeCustomerId).includes(invalidIds[0]));
-
-        //Check we have the right count of missing ids
         expect(Object.keys(usersSummary.missing).length).toEqual(2);
     })
 })
 
 describe('Update stripe user', () => {
-    jest.setMock('../../database/database.ts', { initDatabase });
-
-    jest.mock('../../database/users.ts', () => {
-        const originalModule = jest.requireActual('../../database/users.ts');
-        return {
-            ...originalModule,
-            updateUser: jest.fn(() => Promise.resolve()),
-            findUserByStripeCustomerId: jest.fn(() => Promise.resolve())
-        };
-    });
-    const db = initDatabase({
-        host: "localhost",
-        port: 3306,
-        user: "root",
-        password: "",
-        database: "test"
-    });
-    const stripe = new Stripe('', { apiVersion: '2022-11-15' });
     test('Test update process for a missing or invalid stripe user', async () => {
+        jest.spyOn(StripeService, 'createStripeCustomer').mockResolvedValue({ ...testStripeCustomer, id: 'new_stripe_customer' })
+        jest.spyOn(DatabaseUsers, 'updateUser').mockResolvedValue();
+        jest.spyOn(DatabaseUsers, 'findUserByStripeCustomerId').mockResolvedValue({
+            ...testCohabUser, stripeCustomerId: 'new_stripe_customer'
+        });
         const cohabUser = getTestCohabUsers([null])[0];
-        const result = await syncStripeUser(cohabUser, db, stripe, true);
-        console.log(result)
+        const result = await syncStripeUser(cohabUser, true);
+        expect(result.status).toEqual('done');
+    })
+
+    test('Test update process for a missing or invalid stripe user', async () => {
+        jest.spyOn(StripeService, 'createStripeCustomer').mockResolvedValue({ ...testStripeCustomer, id: 'new_stripe_customer' })
+        jest.spyOn(DatabaseUsers, 'updateUser').mockRejectedValue(new Error('Test error in sync stripe'))
+        jest.spyOn(DatabaseUsers, 'findUserByStripeCustomerId').mockResolvedValue({
+            ...testCohabUser, stripeCustomerId: 'new_stripe_customer'
+        });
+        const cohabUser = getTestCohabUsers([null])[0];
+        const result = await syncStripeUser(cohabUser, true);
+        expect(result.status).toEqual('failed');
+        expect(result.message).toEqual('Test error in sync stripe');
     })
 }) 

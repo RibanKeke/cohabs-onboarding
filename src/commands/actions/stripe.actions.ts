@@ -1,8 +1,9 @@
-import { ConnectionPool } from "@databases/mysql";
+
 import Stripe from "stripe";
-import { Users, users } from "../../database/database";
+import { Users } from "../../database/database";
 import { findUserByStripeCustomerId, updateUser } from "../../database/users";
 import { UpdateResult, UserExecutionRecord, UsersSummary } from "../../interfaces/commands.interface";
+import { NewStripeCustomer, createStripeCustomer } from "../../stripe";
 
 /**
  * Check if cohab tenant has linked stripe customer
@@ -38,8 +39,8 @@ async function checkStripeUsers(cohabsUsers: Array<Users>, stripeCustomers: Arra
  * @param commit Flag for commit 
  * @returns UpdateResult<Users>
  */
-async function syncStripeUser(cohabUser: Users, db: ConnectionPool, stripe: Stripe, commit: boolean): Promise<UpdateResult<Users>> {
-    const stripeUser: Stripe.CustomerCreateParams = {
+async function syncStripeUser(cohabUser: Users, commit: boolean): Promise<UpdateResult<Users>> {
+    const stripeUser: NewStripeCustomer = {
         description: cohabUser.about ?? 'New cohab stripe user',
         email: cohabUser.email,
         name: `${cohabUser.firstName} ${cohabUser.lastName}`,
@@ -49,9 +50,9 @@ async function syncStripeUser(cohabUser: Users, db: ConnectionPool, stripe: Stri
         }
     }
     const execute = async () => {
-        const newStripeUser = await stripe.customers.create(stripeUser);
-        await updateUser(cohabUser.id, { stripeCustomerId: newStripeUser.id }, db);
-        return await findUserByStripeCustomerId(newStripeUser.id, db)
+        const newStripeUser = await createStripeCustomer(stripeUser);
+        await updateUser(cohabUser.id, { stripeCustomerId: newStripeUser.id });
+        return await findUserByStripeCustomerId(newStripeUser.id)
     }
     if (commit) {
         return await execute().then(updatedUser => {
