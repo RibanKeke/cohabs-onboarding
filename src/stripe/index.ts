@@ -1,6 +1,5 @@
-import { StripeService, NewStripeCustomer, createStripeCustomer } from "./stripe";
+import { StripeService, NewStripeCustomer, createStripeCustomer, listStripCustomers } from "./stripe";
 
 const initializeStripe = (apiKey: string, stripeAccount: string) => StripeService.initialize(apiKey, stripeAccount);
-const getStripe = StripeService.getStripe
 
-export { initializeStripe, NewStripeCustomer, getStripe, createStripeCustomer }
+export { initializeStripe, NewStripeCustomer, createStripeCustomer, listStripCustomers }

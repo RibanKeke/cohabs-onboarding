@@ -32,4 +32,8 @@ async function createStripeCustomer(newStripeUser: NewStripeCustomer): Promise<S
     return await stripe.customers.create(newStripeUser);
 }
 
-export { StripeService, NewStripeCustomer, createStripeCustomer }
+async function listStripCustomers() {
+    return (await StripeService.getStripe().customers.list()).data;
+}
+
+export { StripeService, NewStripeCustomer, createStripeCustomer, listStripCustomers }

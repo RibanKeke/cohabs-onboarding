@@ -1,4 +1,7 @@
 
+/**
+ * Sync cohabUser to Stripe: Add missing stripe user, create link in the database then report the changes.
+ */
 async function syncUsers() {
     console.log('Hello');
 }

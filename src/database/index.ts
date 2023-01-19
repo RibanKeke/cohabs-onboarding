@@ -24,11 +24,6 @@ const initializeDatabase = (options: {
 }
 ) => DatabaseService.initialize(options)
 
-const CohabUsers = {
-    updateUser: updateUser,
-    findUserByStripeCustomerId: findUserByStripeCustomerId
-}
-
 export {
     initializeDatabase,
     Houses,

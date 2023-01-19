@@ -1,8 +1,7 @@
-
-import Stripe from "stripe";
 import { findUserByStripeCustomerId, updateUser, Users } from "../../database";
+import { listCohabUsers } from "../../database/users";
 import { UpdateResult, UserExecutionRecord, UsersSummary } from "../../interfaces/commands.interface";
-import { NewStripeCustomer, createStripeCustomer } from "../../stripe";
+import { NewStripeCustomer, createStripeCustomer, listStripCustomers } from "../../stripe";
 
 /**
  * Check if cohab tenant has linked stripe customer
@@ -10,7 +9,9 @@ import { NewStripeCustomer, createStripeCustomer } from "../../stripe";
  * @param stripeCustomers Existing stripe customers
  * @returns 
  */
-async function checkStripeUsers(cohabsUsers: Array<Users>, stripeCustomers: Array<Stripe.Customer>): Promise<UsersSummary> {
+async function checkStripeUsers(): Promise<UsersSummary> {
+    const stripeCustomers = await listStripCustomers();
+    const cohabsUsers = await listCohabUsers()
     const customersIds = stripeCustomers.map(c => c.id);
     const usersSummary = cohabsUsers.reduce((result, cohabUser) => {
         const { missing, invalid }: { missing: boolean, invalid: boolean } = cohabUser.stripeCustomerId === null ? { missing: true, invalid: false } :

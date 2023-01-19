@@ -11,4 +11,9 @@ async function findUserByStripeCustomerId(stripeCustomerId: string) {
     return await users(db).findOne({ stripeCustomerId })
 }
 
-export { updateUser, findUserByStripeCustomerId }
+async function listCohabUsers() {
+    const db = DatabaseService.getDb();
+    return await users(db).find().all();
+}
+
+export { updateUser, findUserByStripeCustomerId, listCohabUsers }

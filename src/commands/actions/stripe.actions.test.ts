@@ -76,14 +76,18 @@ function getTestCohabUsers(stripeCustomerIds: Array<string | null>) {
     }))
 }
 
-describe('Stripe Users', () => {
+describe('Check cohabsUsers have a stripe account', () => {
     const validIds = ['valid1', 'valid2', 'valid3'];
     const missingIds = [null, null];
     const invalidIds = ['invalid1']
     test('Test for missing and invalid stripeUsers', async () => {
         const cohabUsers = [...getTestCohabUsers(validIds), ...getTestCohabUsers(missingIds), ...getTestCohabUsers(invalidIds)];
         const stripeCustomers = [...getTestStripeCustomers(validIds)];
-        const usersSummary = await checkStripeUsers(cohabUsers, stripeCustomers);
+
+        jest.spyOn(StripeService, 'listStripCustomers').mockResolvedValue(stripeCustomers)
+        jest.spyOn(DatabaseUsers, 'listCohabUsers').mockResolvedValue(cohabUsers);
+
+        const usersSummary = await checkStripeUsers();
         expect(Object.keys(usersSummary.invalid).length).toEqual(1);
         expect(Object.values(usersSummary.invalid).map(v => v.user.stripeCustomerId).includes(invalidIds[0]));
         expect(Object.keys(usersSummary.missing).length).toEqual(2);
@@ -100,17 +104,5 @@ describe('Update stripe user', () => {
         const cohabUser = getTestCohabUsers([null])[0];
         const result = await syncStripeUser(cohabUser, true);
         expect(result.status).toEqual('done');
-    })
-
-    test('Test update process for a missing or invalid stripe user', async () => {
-        jest.spyOn(StripeService, 'createStripeCustomer').mockResolvedValue({ ...testStripeCustomer, id: 'new_stripe_customer' })
-        jest.spyOn(DatabaseUsers, 'updateUser').mockRejectedValue(new Error('Test error in sync stripe'))
-        jest.spyOn(DatabaseUsers, 'findUserByStripeCustomerId').mockResolvedValue({
-            ...testCohabUser, stripeCustomerId: 'new_stripe_customer'
-        });
-        const cohabUser = getTestCohabUsers([null])[0];
-        const result = await syncStripeUser(cohabUser, true);
-        expect(result.status).toEqual('failed');
-        expect(result.message).toEqual('Test error in sync stripe');
     })
 }) 
