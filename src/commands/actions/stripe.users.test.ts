@@ -91,7 +91,7 @@ describe("Check cohabsUsers have a stripe account", () => {
     const stripeCustomers = [...getTestStripeCustomers(validIds)];
 
     jest
-      .spyOn(StripeService, "listStripCustomers")
+      .spyOn(StripeService, "listStripeCustomers")
       .mockResolvedValue(stripeCustomers);
     jest.spyOn(DatabaseUsers, "listCohabUsers").mockResolvedValue(cohabUsers);
 

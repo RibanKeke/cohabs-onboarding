@@ -3,7 +3,7 @@ import { listCohabUsers } from "../../database/users";
 import {
   NewStripeCustomer,
   createStripeCustomer,
-  listStripCustomers,
+  listStripeCustomers,
 } from "../../stripe";
 import report from "../../utils";
 import {
@@ -25,7 +25,7 @@ async function checkStripeUsers(): Promise<{
   usersSummary: UsersSummary;
   usersCount: number;
 }> {
-  const stripeCustomers = await listStripCustomers();
+  const stripeCustomers = await listStripeCustomers();
   const cohabsUsers = await listCohabUsers();
   const customersIds = stripeCustomers.map((c) => c.id);
   const usersCount = cohabsUsers.length;
@@ -42,7 +42,7 @@ async function checkStripeUsers(): Promise<{
         const userExecutionRecord: ExecutionRecord<Users> = {
           message: "",
           status: "new",
-          user: cohabUser,
+          item: cohabUser,
         };
         return {
           ...result,
@@ -54,7 +54,7 @@ async function checkStripeUsers(): Promise<{
         const userExecutionRecord: ExecutionRecord<Users> = {
           message: "",
           status: "new",
-          user: cohabUser,
+          item: cohabUser,
         };
         const invalidResult = {
           ...result.invalid,
@@ -75,8 +75,6 @@ async function checkStripeUsers(): Promise<{
 /**
  * Create new stripe use and update cohabUser with new stripeCustomerId
  * @param cohabUser Cohab user
- * @param db Database connection pool
- * @param stripe Stripe instance
  * @param commit Flag for commit
  * @returns UpdateResult<Users>
  */
@@ -138,7 +136,7 @@ async function processUsers(
   commit: boolean
 ): Promise<ExecutionStats> {
   const usersList = Object.values(users).map(
-    (executionRecord) => executionRecord.user
+    (executionRecord) => executionRecord.item
   );
   if (usersList.length === 0) {
     return {

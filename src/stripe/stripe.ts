@@ -9,6 +9,15 @@ type NewStripeCustomer = Pick<
   };
 };
 
+type NewStripeProduct = Pick<
+  Stripe.ProductCreateParams,
+  "active" | "name" | "description" | "default_price_data"
+> & {
+  metadata: {
+    cohabRoomId: string;
+  };
+};
+
 class StripeService {
   private static instance: StripeService;
   private stripe: Stripe;
@@ -40,7 +49,18 @@ async function createStripeCustomer(
   return await stripe.customers.create(newStripeUser);
 }
 
-async function listStripCustomers() {
+async function listStripeCustomers() {
+  return (await StripeService.getStripe().customers.list()).data;
+}
+
+async function createStripeProduct(
+  newStripeProduct: Stripe.ProductCreateParams
+): Promise<Stripe.Product> {
+  const stripe = StripeService.getStripe();
+  return await stripe.products.create(newStripeProduct);
+}
+
+async function listStripeProducts() {
   return (await StripeService.getStripe().customers.list()).data;
 }
 
@@ -48,5 +68,8 @@ export {
   StripeService,
   NewStripeCustomer,
   createStripeCustomer,
-  listStripCustomers,
+  listStripeCustomers,
+  createStripeProduct,
+  listStripeProducts,
+  NewStripeProduct,
 };
