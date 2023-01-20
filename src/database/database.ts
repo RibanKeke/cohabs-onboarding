@@ -1,39 +1,39 @@
 
-import createConnectionPool, { ConnectionPool } from '@databases/mysql';
+import createConnectionPool, { ConnectionPool } from "@databases/mysql";
 
 
 class DatabaseService {
-    private static instance: DatabaseService;
-    private db: ConnectionPool;
-    private constructor(options: {
+	private static instance: DatabaseService;
+	private db: ConnectionPool;
+	private constructor(options: {
         host: string,
         port: number,
         user: string,
         password: string,
         database: string
     }) {
-        this.db = createConnectionPool(`mysql://${options.user}:${options.password}@${options.host}:${options.port}/${options.database}`);
-    }
+		this.db = createConnectionPool(`mysql://${options.user}:${options.password}@${options.host}:${options.port}/${options.database}`);
+	}
 
-    static initialize(options: {
+	static initialize(options: {
         host: string,
         port: number,
         user: string,
         password: string,
         database: string
     }) {
-        if (!DatabaseService.instance) {
-            this.instance = new DatabaseService(options);
-        }
-        return this.instance.db;
-    }
+		if (!DatabaseService.instance) {
+			this.instance = new DatabaseService(options);
+		}
+		return this.instance.db;
+	}
 
-    static getDb() {
-        if (this.instance) {
-            return this.instance.db;
-        }
-        throw ('Database is not iniitialized');
-    }
+	static getDb() {
+		if (this.instance) {
+			return this.instance.db;
+		}
+		throw ("Database is not iniitialized");
+	}
 }
 
-export { DatabaseService }
+export { DatabaseService };

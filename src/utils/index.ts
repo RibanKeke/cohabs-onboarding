@@ -1,4 +1,4 @@
-import { ReportAgent } from './report';
+import { ReportAgent } from "./report";
 
 const report = {
 	logProgress: ReportAgent.logProgress,

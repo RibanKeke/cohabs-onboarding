@@ -3,19 +3,23 @@ module.exports = {
 		"browser": true,
 		"es2021": true
 	},
+	"ignorePatterns":[".eslintrc.js"],
 	"extends": [
 		"eslint:recommended",
-		"plugin:@typescript-eslint/recommended"
+		"plugin:@typescript-eslint/recommended",
+		"prettier"
 	],
 	"overrides": [
 	],
 	"parser": "@typescript-eslint/parser",
 	"parserOptions": {
 		"ecmaVersion": "latest",
-		"sourceType": "module"
+		"sourceType": "module",
+"project": "./tsconfig.json",
+		"tsconfigRootDir": __dirname
 	},
 	"plugins": [
-		"@typescript-eslint"
+		"@typescript-eslint",
 	],
 	"rules": {
 		"indent": [

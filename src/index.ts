@@ -34,24 +34,24 @@ dotenv.config({ path: ".env" });
 	});
 
 	switch (commands.choice) {
-		case 0: {
-			await syncUsers();
-			break;
-		}
+	case 0: {
+		await syncUsers();
+		break;
+	}
 
-		case 1: {
-			await syncStripeProducts();
-			break;
-		}
+	case 1: {
+		await syncStripeProducts();
+		break;
+	}
 
-		case 2: {
-			await syncStripeSubscriptions();
-			break;
-		}
+	case 2: {
+		await syncStripeSubscriptions();
+		break;
+	}
 
-		default: {
-			break;
-		}
+	default: {
+		break;
+	}
 	}
 
 	await db.dispose();
