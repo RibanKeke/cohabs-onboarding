@@ -9,6 +9,7 @@ import {
 import { initializeStripe } from "./stripe";
 import Report from "./utils";
 import { initializeDatabase } from "./database";
+import report from "./utils";
 
 dotenv.config({ path: ".env" });
 
@@ -58,7 +59,7 @@ dotenv.config({ path: ".env" });
 
   switch (commands.choice) {
     case 0: {
-      await syncUsers();
+      await syncUsers(true);
       break;
     }
 
@@ -76,6 +77,6 @@ dotenv.config({ path: ".env" });
       break;
     }
   }
-
+  console.log(report.getReport());
   await db.dispose();
 })();
