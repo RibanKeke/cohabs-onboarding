@@ -9,6 +9,6 @@ export default {
   transform: {
     '^.+\\.(ts)?$': 'ts-jest',
   },
-  testRegex: './*.spec|e2e|test.(ts)?$',
+  testRegex: './*.test.(ts)?$',
   moduleFileExtensions: ['ts', 'js', 'json', 'node'],
 };

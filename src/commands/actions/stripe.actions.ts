@@ -1,6 +1,6 @@
-import { findUserByStripeCustomerId, updateUser, Users } from "../../database";
+import { findUserByStripeCustomerId, updateUser, Entities } from "../../database";
 import { listCohabUsers } from "../../database/users";
-import { UpdateResult, UserExecutionRecord, UsersSummary } from "../../interfaces/commands.interface";
+import { UpdateResult, ExecutionRecord, ExecutionSummary, UsersSummary } from "../../interfaces/commands.interface";
 import { NewStripeCustomer, createStripeCustomer, listStripCustomers } from "../../stripe";
 
 /**
@@ -18,16 +18,16 @@ async function checkStripeUsers(): Promise<UsersSummary> {
             customersIds.includes(cohabUser.stripeCustomerId) ? { missing: false, invalid: false } : { missing: false, invalid: true }
 
         if (missing) {
-            const userExecutionRecord: UserExecutionRecord = { message: '', status: 'new', user: cohabUser };
+            const userExecutionRecord: ExecutionRecord<Entities.Users> = { message: '', status: 'new', user: cohabUser };
             return { ...result, missing: { ...result.missing, [cohabUser.id]: userExecutionRecord } }
         }
 
         if (invalid) {
-            const userExecutionRecord: UserExecutionRecord = { message: '', status: 'new', user: cohabUser };
+            const userExecutionRecord: ExecutionRecord<Entities.Users> = { message: '', status: 'new', user: cohabUser };
             return { ...result, invalid: { ...result.invalid, [cohabUser.id]: userExecutionRecord } }
         }
         return result;
-    }, { missing: {}, invalid: {} } as UsersSummary)
+    }, { missing: {}, invalid: {}, broken: {} } as UsersSummary)
     return usersSummary;
 }
 
@@ -39,7 +39,7 @@ async function checkStripeUsers(): Promise<UsersSummary> {
  * @param commit Flag for commit 
  * @returns UpdateResult<Users>
  */
-async function syncStripeUser(cohabUser: Users, commit: boolean): Promise<UpdateResult<Users>> {
+async function syncStripeUser(cohabUser: Entities.Users, commit: boolean): Promise<UpdateResult<Entities.Users>> {
     const stripeUser: NewStripeCustomer = {
         description: cohabUser.about ?? 'New cohab stripe user',
         email: cohabUser.email,
@@ -56,15 +56,15 @@ async function syncStripeUser(cohabUser: Users, commit: boolean): Promise<Update
     }
     if (commit) {
         return await execute().then(updatedUser => {
-            const successResult: UpdateResult<Users> = { id: updatedUser?.id, status: 'done', target: updatedUser ?? undefined };
+            const successResult: UpdateResult<Entities.Users> = { id: updatedUser?.id, status: 'done', target: updatedUser ?? undefined };
             return successResult;
         }
         ).catch(err => {
-            const failedResult: UpdateResult<Users> = { id: cohabUser?.id, status: 'failed', target: cohabUser, message: err.message };
+            const failedResult: UpdateResult<Entities.Users> = { id: cohabUser?.id, status: 'failed', target: cohabUser, message: err.message };
             return failedResult;
         })
     } else {
-        const simResult: UpdateResult<Users> = {
+        const simResult: UpdateResult<Entities.Users> = {
             id: cohabUser?.id, status: 'skipped', target: cohabUser
         }
         return simResult

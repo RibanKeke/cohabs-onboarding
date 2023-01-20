@@ -1,8 +1,9 @@
-import { ReportAgent } from "./report"
+import { ReportAgent } from './report';
 
-const Report = {
-    logProgress: ReportAgent.logProgress,
-    clearReport: ReportAgent.clearReport,
-}
+const report = {
+	logProgress: ReportAgent.logProgress,
+	clearReport: ReportAgent.clearReport,
+	getReport: ReportAgent.getReport,
+};
 
-export default Report;
+export default report;

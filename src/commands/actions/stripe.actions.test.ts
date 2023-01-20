@@ -1,5 +1,5 @@
 import Stripe from "stripe";
-import { Users } from "../../database";
+import { Entities } from "../../database";
 import * as DatabaseUsers from "../../database/users";
 import * as StripeService from "../../stripe";
 import { checkStripeUsers, syncStripeUser } from "./stripe.actions";
@@ -23,7 +23,7 @@ const testStripeCustomer: Stripe.Customer = {
     shipping: null
 }
 
-const testCohabUser: Users = {
+const testCohabUser: Entities.Users = {
     about: null,
     active: 1,
     address: 'Boulevard de la decouverte',
