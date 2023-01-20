@@ -32,7 +32,7 @@ class DatabaseService {
     if (this.instance) {
       return this.instance.db;
     }
-    throw "Database is not iniitialized";
+    throw new Error("Database is not iniitialized");
   }
 }
 

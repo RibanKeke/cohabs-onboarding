@@ -29,7 +29,7 @@ class StripeService {
     if (this.instance) {
       return this.instance.stripe;
     }
-    throw "Stripe is not iniitialized";
+    throw new Error("Stripe is not iniitialized");
   }
 }
 

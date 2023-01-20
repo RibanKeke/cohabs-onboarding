@@ -1,8 +1,8 @@
 import Stripe from "stripe";
-import { Entities } from "../../database";
+import { Users } from "../../database";
 import * as DatabaseUsers from "../../database/users";
 import * as StripeService from "../../stripe";
-import { checkStripeUsers, syncStripeUser } from "./stripe.actions";
+import { checkStripeUsers, syncStripeUser } from "./stripe.users";
 
 const testStripeCustomer: Stripe.Customer = {
   id: "test",
@@ -23,7 +23,7 @@ const testStripeCustomer: Stripe.Customer = {
   shipping: null,
 };
 
-const testCohabUser: Entities.Users = {
+const testCohabUser: Users = {
   about: null,
   active: 1,
   address: "Boulevard de la decouverte",
@@ -95,14 +95,16 @@ describe("Check cohabsUsers have a stripe account", () => {
       .mockResolvedValue(stripeCustomers);
     jest.spyOn(DatabaseUsers, "listCohabUsers").mockResolvedValue(cohabUsers);
 
-    const usersSummary = await checkStripeUsers();
-    expect(Object.keys(usersSummary.invalid).length).toEqual(1);
+    const { usersSummary } = await checkStripeUsers();
+    expect(Object.keys(usersSummary.invalid as object).length).toEqual(1);
     expect(
-      Object.values(usersSummary.invalid)
+      Object.values(usersSummary.invalid as object)
         .map((v) => v.user.stripeCustomerId)
         .includes(invalidIds[0])
     );
-    expect(Object.keys(usersSummary.missing).length).toEqual(2);
+    expect(Object.keys(usersSummary.missing as object).length).toEqual(2);
+    expect(usersSummary.broken).toEqual({});
+    expect(usersSummary.synced).toEqual({});
   });
 });
 

@@ -62,8 +62,17 @@ const signalOptions: SignaleOptions<ReportType> = {
     },
   },
 };
-
+/**
+ * Singleton: Logging and saving script steps results
+ */
 class ReportAgent {
+  /**
+   * Log script progress
+   * @param title Step title
+   * @param description Step description
+   * @param type Log type: start | info | warning | danger | success | failure | complete
+   * @param payload Optional step result data to be appended to the report
+   */
   static logProgress<T>(
     title: string,
     description: string,
@@ -77,6 +86,10 @@ class ReportAgent {
     this.instance.reportProgress<T>(title, description, type, payload);
   }
 
+  /**
+   * Returns current saved execution report
+   * @returns Save execution report
+   */
   static getReport(): string[] {
     if (this.instance) {
       return this.instance.reports;
@@ -85,6 +98,9 @@ class ReportAgent {
     return [];
   }
 
+  /**
+   * Clear currently saved report
+   */
   static clearReport() {
     if (this.instance) {
       this.instance.reports = [];
@@ -130,7 +146,7 @@ class ReportAgent {
     const printedData = data.map((dataItem) => {
       const filteredData = reportFields.reduce<Partial<T>>(
         (filtered, field) => {
-          const value: unknown = (dataItem as Record<string, any>)[
+          const value: unknown = (dataItem as Record<string, unknown>)[
             String(field)
           ];
           return { ...filtered, [String(field)]: value };
@@ -139,7 +155,7 @@ class ReportAgent {
       );
       return filteredData;
     });
-    console.table(printedData);
+    console.table(printedData, reportFields as Array<string>);
     return `Data: ${JSON.stringify(printedData, undefined, 2)}`;
   }
 
@@ -154,7 +170,6 @@ class ReportAgent {
     if (payload) {
       dataReport = this.printData<T>(payload.data, payload.reportFields);
     }
-
     this.reports.push(
       `[${type}] - [${title}: ${description}] \n ${dataReport}`
     );

@@ -1,6 +1,5 @@
 import { DatabaseService } from "./database";
 import { findUserByStripeCustomerId, updateUser } from "./users";
-import * as Entities from "./models";
 
 const initializeDatabase = (options: {
   host: string;
@@ -10,4 +9,5 @@ const initializeDatabase = (options: {
   database: string;
 }) => DatabaseService.initialize(options);
 
-export { Entities, initializeDatabase, updateUser, findUserByStripeCustomerId };
+export { initializeDatabase, updateUser, findUserByStripeCustomerId };
+export { Houses, Leases, Payments, Rooms, Users } from "./models";
