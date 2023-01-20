@@ -4,11 +4,11 @@
  */
 
 export default {
-	roots: ["<rootDir>/src"],
-	automock: false,
-	transform: {
-		"^.+\\.(ts)?$": "ts-jest",
-	},
-	testRegex: "./*.test.(ts)?$",
-	moduleFileExtensions: ["ts", "js", "json", "node"],
+  roots: ["<rootDir>/src"],
+  automock: false,
+  transform: {
+    "^.+\\.(ts)?$": "ts-jest",
+  },
+  testRegex: "./*.test.(ts)?$",
+  moduleFileExtensions: ["ts", "js", "json", "node"],
 };
