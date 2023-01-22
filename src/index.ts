@@ -1,4 +1,5 @@
 import process from "node:process";
+import fs from "fs";
 import * as dotenv from "dotenv";
 import prompts from "prompts";
 import {
@@ -7,7 +8,6 @@ import {
   syncUsers,
 } from "./commands/stripe.commands";
 import { initializeStripe } from "./stripe";
-import Report from "./utils";
 import { initializeDatabase } from "./database";
 import report from "./utils";
 
@@ -26,7 +26,7 @@ dotenv.config({ path: ".env" });
     String(process.env.STRIPE_ACCOUNT)
   );
 
-  Report.logProgress(
+  report.logProgress(
     "Sync Script",
     "Check and sync cohabs users and products to Stripe",
     "start"
@@ -64,7 +64,7 @@ dotenv.config({ path: ".env" });
     }
 
     case 1: {
-      await syncRooms(true);
+      await syncRooms(false);
       break;
     }
 
@@ -77,6 +77,9 @@ dotenv.config({ path: ".env" });
       break;
     }
   }
-  console.log(report.getReport());
+  fs.writeFileSync(
+    `./cohabs-stripe-report-${new Date().toISOString()}.txt`,
+    report.getReport().join("\n")
+  );
   await db.dispose();
 })();

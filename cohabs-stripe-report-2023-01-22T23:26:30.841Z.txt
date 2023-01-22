@@ -1,0 +1,180 @@
+[start] - [Sync Script: Check and sync cohabs users and products to Stripe] 
+ 
+[info] - [...Progress:: Syncing cohab rooms to stripe] 
+ 
+[warning] - [...Reporting:: Invalid cohab rooms - These records are skipped 
+ Please fix the issue and run the script again.] 
+ Data: [
+  {
+    "active": 0,
+    "id": "_8l45_gt2q-qzeQ9UlGpIwgP9Bz7j1I9",
+    "houseId": null,
+    "stripeProductId": "prod_LhWWoh1zMJQ8Mg",
+    "message": "Invalid link to houseId"
+  },
+  {
+    "active": 1,
+    "id": "_HADg0l5L7Z5gwmbHJOqqb3rfmiwH8mD",
+    "houseId": null,
+    "stripeProductId": "prod_KEMikL46NqFm0j",
+    "message": "Invalid link to houseId"
+  },
+  {
+    "active": 1,
+    "id": "_He8sl3cZ4Cjobpyy6vQxXTtneHhsOsd",
+    "houseId": null,
+    "stripeProductId": "prod_LhWWoh1zMJQ8Mg",
+    "message": "Invalid link to houseId"
+  },
+  {
+    "active": 1,
+    "id": "_IfSFRf_3hVyo5PB3wQdnccidYomY3WV",
+    "houseId": null,
+    "stripeProductId": "prod_KEMikL46NqFm0j",
+    "message": "Invalid link to houseId"
+  },
+  {
+    "active": 1,
+    "id": "_NYNv-fb1SnrlLJRokxvMMROFfhGhmVi",
+    "houseId": null,
+    "stripeProductId": "prod_LhWWoh1zMJQ8Mg",
+    "message": "Invalid link to houseId"
+  },
+  {
+    "active": 0,
+    "id": "_PIi6j_Go-0HHr6oZJj5wN4s0cMTTlv4",
+    "houseId": null,
+    "stripeProductId": "prod_LKIRK7oG8d8izM",
+    "message": "Invalid link to houseId"
+  },
+  {
+    "active": 1,
+    "id": "_UanyPZDeIqyOdxtLxj1sItAZT0H90uT",
+    "houseId": null,
+    "stripeProductId": "prod_KEMikL46NqFm0j",
+    "message": "Invalid link to houseId"
+  },
+  {
+    "active": 1,
+    "id": "_vk-LnBV0TckDhk97DFHx-EHMIOSMUvK",
+    "houseId": null,
+    "stripeProductId": "prod_KEMikL46NqFm0j",
+    "message": "Invalid link to houseId"
+  },
+  {
+    "active": 0,
+    "id": "_VyG38ulOt-AmRgvO8t1Kzu0NgJgbZ5M",
+    "houseId": null,
+    "stripeProductId": "prod_LKIRK7oG8d8izM",
+    "message": "Invalid link to houseId"
+  },
+  {
+    "active": 1,
+    "id": "_YsJ6Xk3hkCd63DM-N6WmdCVYQ4TxxDn",
+    "houseId": null,
+    "stripeProductId": "prod_KEMikL46NqFm0j",
+    "message": "Invalid link to houseId"
+  },
+  {
+    "active": 1,
+    "id": "-1ZQ2FFeZkY8aVfRofKJjKMYoUBa4Rfp",
+    "houseId": null,
+    "stripeProductId": "prod_KEMikL46NqFm0j",
+    "message": "Invalid link to houseId"
+  },
+  {
+    "active": 1,
+    "id": "-379rPm6dzJ1Ldgd-wxpQEpeqGZOj7L9",
+    "houseId": null,
+    "stripeProductId": "prod_KEMikL46NqFm0j",
+    "message": "Invalid link to houseId"
+  },
+  {
+    "active": 1,
+    "id": "-hVUgkhi2fEuh6xNVpguQjNwHbY4epCv",
+    "houseId": null,
+    "stripeProductId": "prod_KEMikL46NqFm0j",
+    "message": "Invalid link to houseId"
+  },
+  {
+    "active": 1,
+    "id": "-iRe4EYYSMVExJTCd_0OfPI3NDwQDaP_",
+    "houseId": null,
+    "stripeProductId": "prod_KEMikL46NqFm0j",
+    "message": "Invalid link to houseId"
+  },
+  {
+    "active": 1,
+    "id": "-MFKrs1DN3JORaXhF0fZ5fRi9igonz5l",
+    "houseId": null,
+    "stripeProductId": "prod_KEMikL46NqFm0j",
+    "message": "Invalid link to houseId"
+  },
+  {
+    "active": 0,
+    "id": "-MM21GZraNK9wDBmsfD9OxNAb4WWLhEF",
+    "houseId": null,
+    "stripeProductId": "prod_KEMikL46NqFm0j",
+    "message": "Invalid link to houseId"
+  },
+  {
+    "active": 1,
+    "id": "-oWfdBm3g1fBFPeGnFXOCsV7Eov4_ozR",
+    "houseId": null,
+    "stripeProductId": "prod_KEMikL46NqFm0j",
+    "message": "Invalid link to houseId"
+  },
+  {
+    "active": 1,
+    "id": "-RJlZsWSLU9EMPK3MUeJeUNC8ONWRFAN",
+    "houseId": null,
+    "stripeProductId": "prod_LhWWoh1zMJQ8Mg",
+    "message": "Invalid link to houseId"
+  }
+]
+[info] - [...Processing:: broken stripe rooms] 
+ Data: [
+  {
+    "active": 1,
+    "id": "_QlJNhNp5PJ7a9TxQ8aEhgKxjGz3kC4b",
+    "location": "second half floor, garden side right",
+    "houseId": "50oiw0lpcewlrmctv3fttgyldui9c9nc",
+    "stripeProductId": "prod_KEMikL46NqFm0j"
+  },
+  {
+    "active": 1,
+    "id": "-OyHvZdxKNKgi8XuBwj7s6KlZx_ehc1i",
+    "location": "fourth floor",
+    "houseId": "50oiw0lpcewlrmctv3fttgyldui9c9nc",
+    "stripeProductId": "prod_KEMikL46NqFm0j"
+  }
+]
+[warning] - [Skipped:: broken stripe rooms] 
+ Data: [
+  {
+    "active": 1,
+    "id": "_QlJNhNp5PJ7a9TxQ8aEhgKxjGz3kC4b",
+    "location": "second half floor, garden side right",
+    "houseId": "50oiw0lpcewlrmctv3fttgyldui9c9nc",
+    "stripeProductId": "prod_KEMikL46NqFm0j",
+    "message": "SKIPPED"
+  },
+  {
+    "active": 1,
+    "id": "-OyHvZdxKNKgi8XuBwj7s6KlZx_ehc1i",
+    "location": "fourth floor",
+    "houseId": "50oiw0lpcewlrmctv3fttgyldui9c9nc",
+    "stripeProductId": "prod_KEMikL46NqFm0j",
+    "message": "SKIPPED"
+  }
+]
+[success] - [Completed: Cohab rooms synchronization complete] 
+ Data: [
+  {
+    "count": 20,
+    "done": 0,
+    "failed": 0,
+    "skipped": 20,
+    "synced": 0
+  }
+]
