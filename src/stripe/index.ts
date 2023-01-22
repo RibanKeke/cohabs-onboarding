@@ -7,6 +7,9 @@ const initializeStripe = (apiKey: string, stripeAccount: string) => {
 export { initializeStripe };
 export {
   type NewStripeCustomer,
+  type NewStripeProduct,
   listStripeCustomers,
   createStripeCustomer,
+  listStripeProducts,
+  createStripeProduct,
 } from "./stripe";

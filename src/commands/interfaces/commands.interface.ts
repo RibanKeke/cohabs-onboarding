@@ -1,10 +1,10 @@
-import { Rooms, Users } from "../../database";
+import { Leases, Rooms, Users } from "../../database";
 
 type ExecutionStatus = "done" | "failed" | "new";
 type RecordStatus = "missing" | "invalid" | "synced" | "broken";
 type ExecutionRecord<T> = { item: T; status: ExecutionStatus; message: string };
 
-type RecordSummary<T> = Record<string, ExecutionRecord<T>>;
+type RecordSummary<T> = Array<ExecutionRecord<T>>;
 
 type UpdateResult<T> = {
   id: string | undefined;
@@ -15,6 +15,7 @@ type UpdateResult<T> = {
 
 type UsersSummary = Record<RecordStatus, RecordSummary<Users>>;
 type RoomsSummary = Record<RecordStatus, RecordSummary<Rooms>>;
+type LeasesSummary = Record<RecordStatus, RecordSummary<Leases>>;
 type ExecutionStats = {
   done: number;
   failed: number;
@@ -27,10 +28,14 @@ type UserStats = {
   done: number;
 };
 
-type RoomsStats = UserStats;
+interface RoomsStats extends UserStats {
+  synced: number;
+}
+type LeasesStats = UserStats;
 interface ExecutionSummary {
   users?: UserStats;
   rooms?: RoomsStats;
+  leases?: LeasesStats;
 }
 
 export {
@@ -44,4 +49,6 @@ export {
   UserStats,
   RoomsSummary,
   RoomsStats,
+  LeasesSummary,
+  LeasesStats,
 };

@@ -46,7 +46,7 @@ async function checkStripeUsers(): Promise<{
         };
         return {
           ...result,
-          missing: { ...result.missing, [cohabUser.id]: userExecutionRecord },
+          missing: [...result.missing, userExecutionRecord],
         };
       }
 
@@ -56,10 +56,7 @@ async function checkStripeUsers(): Promise<{
           status: "new",
           item: cohabUser,
         };
-        const invalidResult = {
-          ...result.invalid,
-          [cohabUser.id]: userExecutionRecord,
-        };
+        const invalidResult = [...result.invalid, userExecutionRecord];
         return {
           ...result,
           invalid: invalidResult,
@@ -67,7 +64,7 @@ async function checkStripeUsers(): Promise<{
       }
       return result;
     },
-    { missing: {}, invalid: {}, broken: {}, synced: {} } as UsersSummary
+    { missing: [], invalid: [], broken: [], synced: [] } as UsersSummary
   );
   return { usersCount, usersSummary };
 }
@@ -132,12 +129,10 @@ async function syncStripeUser(
 
 async function processUsers(
   origin: RecordStatus,
-  users: RecordSummary<Users>,
+  recordItems: RecordSummary<Users>,
   commit: boolean
 ): Promise<ExecutionStats> {
-  const usersList = Object.values(users).map(
-    (executionRecord) => executionRecord.item
-  );
+  const usersList = recordItems.map((executionRecord) => executionRecord.item);
   if (usersList.length === 0) {
     return {
       done: 0,

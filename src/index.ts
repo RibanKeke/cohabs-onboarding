@@ -64,7 +64,7 @@ dotenv.config({ path: ".env" });
     }
 
     case 1: {
-      await syncRooms(false);
+      await syncRooms(true);
       break;
     }
 

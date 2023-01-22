@@ -1,5 +1,6 @@
 import { rooms, Rooms } from "./models";
 import { DatabaseService } from "./database";
+import { sql } from "@databases/mysql";
 
 async function updateRoom(id: string, updateValues: Partial<Rooms>) {
   const db = DatabaseService.getDb();
@@ -13,7 +14,27 @@ async function findRoomByStripeProductId(stripeProductId: string) {
 
 async function listCohabRooms() {
   const db = DatabaseService.getDb();
-  return await rooms(db).find().all();
+  const result = (await db.query(
+    sql`
+select
+	r.id ,
+	r.active ,
+	r.deleted ,
+	r.location ,
+	r.description ,
+	r.rent ,
+	r.stripeProductId,
+	r.lockId ,
+	h.id as houseId
+from
+	rooms r
+left join houses h on
+	h.id = r.houseId ;
+`
+  )) as Array<Rooms>;
+  console.log("Query result  rooms");
+  console.log(JSON.stringify(result, null, 2));
+  return result;
 }
 
 export { updateRoom, findRoomByStripeProductId, listCohabRooms };

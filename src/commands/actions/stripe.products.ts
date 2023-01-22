@@ -1,14 +1,14 @@
-import { Rooms } from "../../database";
 import {
   findRoomByStripeProductId,
   listCohabRooms,
+  Rooms,
   updateRoom,
-} from "../../database/rooms";
+} from "../../database";
 import {
   createStripeProduct,
   listStripeProducts,
   NewStripeProduct,
-} from "../../stripe/stripe";
+} from "../../stripe";
 import report from "../../utils";
 import {
   ExecutionRecord,
@@ -18,6 +18,92 @@ import {
   RoomsSummary,
   UpdateResult,
 } from "../interfaces/commands.interface";
+
+function checkRoom(
+  cohabRoom: Rooms,
+  stripeProductIds: Array<string>
+): { missing: boolean; broken: boolean; synced: boolean } {
+  const missing = cohabRoom.stripeProductId === null;
+  const broken =
+    cohabRoom.stripeProductId !== null &&
+    !stripeProductIds.includes(cohabRoom.stripeProductId);
+  const synced =
+    Boolean(cohabRoom.houseId) &&
+    Boolean(cohabRoom.stripeProductId) &&
+    stripeProductIds.includes(cohabRoom?.stripeProductId ?? "");
+  return {
+    missing,
+    broken,
+    synced,
+  };
+}
+
+function checkVerifiedRooms(
+  verifiedRooms: Array<Rooms>,
+  productIds: Array<string>
+): RoomsSummary {
+  const roomsSummary = verifiedRooms.reduce(
+    (result, cohabRoom) => {
+      const { missing, broken, synced } = checkRoom(cohabRoom, productIds);
+
+      if (missing) {
+        const roomExecutionRecord: ExecutionRecord<Rooms> = {
+          message: "",
+          status: "new",
+          item: cohabRoom,
+        };
+        return {
+          ...result,
+          missing: [...result.missing, roomExecutionRecord],
+        };
+      }
+
+      if (synced) {
+        const roomExecutionRecord: ExecutionRecord<Rooms> = {
+          message: "",
+          status: "done",
+          item: cohabRoom,
+        };
+        return {
+          ...result,
+          synced: [...result.synced, roomExecutionRecord],
+        };
+      }
+
+      if (broken) {
+        const roomExecutionRecord: ExecutionRecord<Rooms> = {
+          message: "Rooms's product id is missing in stripe",
+          status: "new",
+          item: cohabRoom,
+        };
+        const invalidResult: RecordSummary<Rooms> = [
+          ...result.broken,
+          roomExecutionRecord,
+        ];
+        return {
+          ...result,
+          broken: invalidResult,
+        };
+      }
+      return result;
+    },
+    { missing: [], invalid: [], broken: [], synced: [] } as RoomsSummary
+  );
+  return roomsSummary;
+}
+
+function filterRoomsMissingHouseId(rooms: Array<Rooms>) {
+  return rooms
+    .filter((room) => room.houseId === null)
+    .map((room) => {
+      const executionRecord: ExecutionRecord<Rooms> = {
+        item: room,
+        message: "Invalid link to houseId",
+        status: "new",
+      };
+      return executionRecord;
+    });
+}
 
 /**
  * Check if cohab room has linked stripe product
@@ -31,49 +117,15 @@ async function checkStripeProducts(): Promise<{
 }> {
   const stripeProducts = await listStripeProducts();
   const cohabsRooms = await listCohabRooms();
-  const productsIds = stripeProducts.map((c) => c.id);
+  const roomsMissingHouseId = filterRoomsMissingHouseId(cohabsRooms);
+  const verifiedRooms = cohabsRooms.filter((room) => room.houseId !== null);
+  const productIds = stripeProducts.map((c) => c.id);
   const roomsCount = cohabsRooms.length;
-  const roomsSummary = cohabsRooms.reduce(
-    (result, cohabRoom) => {
-      const { missing, invalid }: { missing: boolean; invalid: boolean } =
-        cohabRoom.stripeProductId === null
-          ? { missing: true, invalid: false }
-          : productsIds.includes(cohabRoom.stripeProductId)
-          ? { missing: false, invalid: false }
-          : { missing: false, invalid: true };
-
-      if (missing) {
-        const roomExecutionRecord: ExecutionRecord<Rooms> = {
-          message: "",
-          status: "new",
-          item: cohabRoom,
-        };
-        return {
-          ...result,
-          missing: { ...result.missing, [cohabRoom.id]: roomExecutionRecord },
-        };
-      }
-
-      if (invalid) {
-        const roomExecutionRecord: ExecutionRecord<Rooms> = {
-          message: "",
-          status: "new",
-          item: cohabRoom,
-        };
-        const invalidResult = {
-          ...result.invalid,
-          [cohabRoom.id]: roomExecutionRecord,
-        };
-        return {
-          ...result,
-          invalid: invalidResult,
-        };
-      }
-      return result;
-    },
-    { missing: {}, invalid: {}, broken: {}, synced: {} } as RoomsSummary
-  );
-  return { roomsCount, roomsSummary };
+  const roomsSummary = checkVerifiedRooms(verifiedRooms, productIds);
+  return {
+    roomsCount,
+    roomsSummary: { ...roomsSummary, invalid: roomsMissingHouseId },
+  };
 }
 
 /**
@@ -99,7 +151,6 @@ async function syncStripeRoom(
         interval: "month",
       },
       unit_amount: Number(cohabRoom.rent),
-      unit_amount_decimal: "0",
     },
   };
   const execute = async () => {
@@ -141,14 +192,33 @@ async function syncStripeRoom(
   }
 }
 
+function reportInvalidRooms(
+  invalidRooms: RecordSummary<Rooms>
+): ExecutionStats {
+  const roomsList: Array<Rooms & { message: string }> = invalidRooms.map(
+    (executionRecord) => ({
+      ...executionRecord.item,
+      message: executionRecord.message,
+    })
+  );
+  report.logProgress<Rooms & { message: string }>(
+    "...Reporting:",
+    "Invalid cohab rooms - These records are skipped \n Please fix the issue and run the script again.",
+    "warning",
+    {
+      data: roomsList,
+      reportFields: ["active", "id", "houseId", "stripeProductId", "message"],
+    }
+  );
+  return { done: 0, failed: 0, skipped: roomsList.length };
+}
+
 async function processRooms(
   origin: RecordStatus,
-  rooms: RecordSummary<Rooms>,
+  roomsSummary: RecordSummary<Rooms>,
   commit: boolean
 ): Promise<ExecutionStats> {
-  const roomsList = Object.values(rooms).map(
-    (executionRecord) => executionRecord.item
-  );
+  const roomsList = roomsSummary.map((executionRecord) => executionRecord.item);
   if (roomsList.length === 0) {
     return {
       done: 0,
@@ -212,6 +282,7 @@ async function processRooms(
           "active",
           "id",
           "location",
+          "rent",
           "houseId",
           "stripeProductId",
           "message",
@@ -247,4 +318,9 @@ async function processRooms(
   };
 }
 
-export { checkStripeProducts, processRooms, syncStripeRoom };
+export {
+  checkStripeProducts,
+  processRooms,
+  syncStripeRoom,
+  reportInvalidRooms,
+};

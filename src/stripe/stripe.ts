@@ -61,7 +61,7 @@ async function createStripeProduct(
 }
 
 async function listStripeProducts() {
-  return (await StripeService.getStripe().customers.list()).data;
+  return (await StripeService.getStripe().products.list()).data;
 }
 
 export {

@@ -99,12 +99,12 @@ describe("Check cohabsUsers have a stripe account", () => {
     expect(Object.keys(usersSummary.invalid as object).length).toEqual(1);
     expect(
       Object.values(usersSummary.invalid as object)
-        .map((v) => v.user.stripeCustomerId)
+        .map((v) => v.item.stripeCustomerId)
         .includes(invalidIds[0])
     );
     expect(Object.keys(usersSummary.missing as object).length).toEqual(2);
-    expect(usersSummary.broken).toEqual({});
-    expect(usersSummary.synced).toEqual({});
+    expect(usersSummary.broken).toEqual([]);
+    expect(usersSummary.synced).toEqual([]);
   });
 });
 
