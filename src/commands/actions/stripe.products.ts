@@ -1,12 +1,14 @@
+import { Rooms } from "../../database";
 import {
-  findUserByStripeCustomerId,
-  Rooms,
-  updateUser,
-  Users,
-} from "../../database";
-import { listCohabRooms, updateRoom } from "../../database/rooms";
-import { NewStripeCustomer, createStripeCustomer } from "../../stripe";
-import { createStripeProduct, listStripeProducts } from "../../stripe/stripe";
+  findRoomByStripeProductId,
+  listCohabRooms,
+  updateRoom,
+} from "../../database/rooms";
+import {
+  createStripeProduct,
+  listStripeProducts,
+  NewStripeProduct,
+} from "../../stripe/stripe";
 import report from "../../utils";
 import {
   ExecutionRecord,
@@ -41,26 +43,26 @@ async function checkStripeProducts(): Promise<{
           : { missing: false, invalid: true };
 
       if (missing) {
-        const userExecutionRecord: ExecutionRecord<Rooms> = {
+        const roomExecutionRecord: ExecutionRecord<Rooms> = {
           message: "",
           status: "new",
           item: cohabRoom,
         };
         return {
           ...result,
-          missing: { ...result.missing, [cohabRoom.id]: userExecutionRecord },
+          missing: { ...result.missing, [cohabRoom.id]: roomExecutionRecord },
         };
       }
 
       if (invalid) {
-        const userExecutionRecord: ExecutionRecord<Rooms> = {
+        const roomExecutionRecord: ExecutionRecord<Rooms> = {
           message: "",
           status: "new",
           item: cohabRoom,
         };
         const invalidResult = {
           ...result.invalid,
-          [cohabRoom.id]: userExecutionRecord,
+          [cohabRoom.id]: roomExecutionRecord,
         };
         return {
           ...result,
@@ -78,86 +80,94 @@ async function checkStripeProducts(): Promise<{
  * Create new stripe product and update cohab room with new stripeProductId
  * @param cohabRoom Cohab room
  * @param commit Flag for commit
- * @returns UpdateResult<Users>
+ * @returns UpdateResult<Rooms>
  */
 async function syncStripeRoom(
-  cohabRoom: Users,
+  cohabRoom: Rooms,
   commit: boolean
-): Promise<UpdateResult<Users>> {
-  const stripeProductId: NewStripeCustomer = {
+): Promise<UpdateResult<Rooms>> {
+  const stripeProduct: NewStripeProduct = {
+    name: cohabRoom.location ?? "",
+    description: cohabRoom.description ?? "",
+    metadata: {
+      cohabRoomId: cohabRoom.id,
+    },
+    active: true,
+    default_price_data: {
+      currency: "eur",
+      recurring: {
+        interval: "month",
+      },
+      unit_amount: Number(cohabRoom.rent),
+      unit_amount_decimal: "0",
+    },
   };
   const execute = async () => {
-    const newStripeProduct = await createStripeProduct(stripeProductId);
-    await updateRoom(cohabUser.id, { stripeCustomerId: newStripeUser.id });
-    const updatedUser = await findUserByStripeCustomerId(newStripeUser.id);
-    if (updatedUser) {
-      return updatedUser;
+    const newStripeProduct = await createStripeProduct(stripeProduct);
+    await updateRoom(cohabRoom.id, { stripeProductId: newStripeProduct.id });
+    const updatedProduct = await findRoomByStripeProductId(newStripeProduct.id);
+    if (updatedProduct) {
+      return updatedProduct;
     } else {
-      throw new Error(`User to update with id: ${cohabUser.id} as not found`);
+      throw new Error(`Room to update with id: ${cohabRoom.id} was not found`);
     }
   };
   if (commit) {
     return await execute()
-      .then((updatedUser) => {
-        const successResult: UpdateResult<Users> = {
-          id: updatedUser.id,
+      .then((updatedRoom) => {
+        const successResult: UpdateResult<Rooms> = {
+          id: updatedRoom.id,
           status: "done",
-          target: updatedUser,
+          target: updatedRoom,
         };
         return successResult;
       })
       .catch((err) => {
-        const failedResult: UpdateResult<Users> = {
-          id: cohabUser?.id,
+        const failedResult: UpdateResult<Rooms> = {
+          id: cohabRoom?.id,
           status: "failed",
-          target: cohabUser,
+          target: cohabRoom,
           message: err.message,
         };
         return failedResult;
       });
   } else {
-    const simResult: UpdateResult<Users> = {
-      id: cohabUser?.id,
+    const simResult: UpdateResult<Rooms> = {
+      id: cohabRoom?.id,
       status: "skipped",
-      target: cohabUser,
+      target: cohabRoom,
     };
     return simResult;
   }
 }
 
-async function processUsers(
+async function processRooms(
   origin: RecordStatus,
-  users: RecordSummary<Users>,
+  rooms: RecordSummary<Rooms>,
   commit: boolean
 ): Promise<ExecutionStats> {
-  const usersList = Object.values(users).map(
+  const roomsList = Object.values(rooms).map(
     (executionRecord) => executionRecord.item
   );
-  if (usersList.length === 0) {
+  if (roomsList.length === 0) {
     return {
       done: 0,
       failed: 0,
       skipped: 0,
     };
   }
-  report.logProgress<Users>(
+  report.logProgress<Rooms>(
     "...Processing:",
-    `${origin} stripe users`,
+    `${origin} stripe rooms`,
     "info",
     {
-      data: usersList,
-      reportFields: [
-        "active",
-        "id",
-        "firstName",
-        "lastName",
-        "stripeCustomerId",
-      ],
+      data: roomsList,
+      reportFields: ["active", "id", "location", "houseId", "stripeProductId"],
     }
   );
   const updateResult = await Promise.all(
-    usersList.map((missingRecord) => {
-      return syncStripeUser(missingRecord, commit);
+    roomsList.map((missingRecord) => {
+      return syncStripeRoom(missingRecord, commit);
     })
   );
   const successfullUpdates = updateResult.filter(
@@ -171,27 +181,27 @@ async function processUsers(
   );
 
   if (successfullUpdates.length > 0) {
-    report.logProgress<Users>(
+    report.logProgress<Rooms>(
       "Success:",
-      `Successfully updated ${origin} stripe users`,
+      `Successfully updated ${origin} stripe rooms`,
       "success",
       {
         data: successfullUpdates.map((result) => result.target),
         reportFields: [
           "active",
           "id",
-          "firstName",
-          "lastName",
-          "stripeCustomerId",
+          "location",
+          "houseId",
+          "stripeProductId",
         ],
       }
     );
   }
 
   if (failedUpdates.length > 0) {
-    report.logProgress<Users & { message?: string }>(
+    report.logProgress<Rooms & { message?: string }>(
       "Failed:",
-      `${origin} stripe users`,
+      `${origin} stripe rooms`,
       "danger",
       {
         data: failedUpdates.map((result) => ({
@@ -201,18 +211,18 @@ async function processUsers(
         reportFields: [
           "active",
           "id",
-          "firstName",
-          "lastName",
-          "stripeCustomerId",
+          "location",
+          "houseId",
+          "stripeProductId",
           "message",
         ],
       }
     );
   }
   if (skippedUpdates.length > 0) {
-    report.logProgress<Users & { message: string }>(
+    report.logProgress<Rooms & { message: string }>(
       "Skipped:",
-      `${origin} stripe users`,
+      `${origin} stripe rooms`,
       "warning",
       {
         data: skippedUpdates.map((result) => ({
@@ -222,9 +232,9 @@ async function processUsers(
         reportFields: [
           "active",
           "id",
-          "firstName",
-          "lastName",
-          "stripeCustomerId",
+          "location",
+          "houseId",
+          "stripeProductId",
           "message",
         ],
       }
@@ -237,4 +247,4 @@ async function processUsers(
   };
 }
 
-export { checkStripeProducts, processUsers, syncStripeUser };
+export { checkStripeProducts, processRooms, syncStripeRoom };

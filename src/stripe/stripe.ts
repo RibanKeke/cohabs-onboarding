@@ -11,7 +11,7 @@ type NewStripeCustomer = Pick<
 
 type NewStripeProduct = Pick<
   Stripe.ProductCreateParams,
-  "active" | "name" | "description" | "default_price_data"
+  "active" | "default_price_data" | "description" | "name"
 > & {
   metadata: {
     cohabRoomId: string;
@@ -54,7 +54,7 @@ async function listStripeCustomers() {
 }
 
 async function createStripeProduct(
-  newStripeProduct: Stripe.ProductCreateParams
+  newStripeProduct: NewStripeProduct
 ): Promise<Stripe.Product> {
   const stripe = StripeService.getStripe();
   return await stripe.products.create(newStripeProduct);

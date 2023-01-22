@@ -1,6 +1,11 @@
-import { ExecutionSummary, UserStats } from "./interfaces/commands.interface";
+import {
+  ExecutionSummary,
+  RoomsStats,
+  UserStats,
+} from "./interfaces/commands.interface";
 import Report from "../utils";
 import { checkStripeUsers, processUsers } from "./actions/stripe.users";
+import { checkStripeProducts, processRooms } from "./actions/stripe.products";
 
 /**
  * Sync cohabUser to Stripe: Add missing stripe user, create link in the database then report the changes.
@@ -53,12 +58,56 @@ async function syncUsers(commit: boolean): Promise<ExecutionSummary> {
   return { users: usersExecutionStats };
 }
 
-async function syncStripeProducts() {
-  console.log("Hello");
+async function syncRooms(commit: boolean) {
+  Report.logProgress("...Progress:", "Syncing cohab rooms to stripe", "info");
+  const { roomsCount, roomsSummary } = await checkStripeProducts();
+
+  const missingExecutionStats = await processRooms(
+    "missing",
+    roomsSummary.missing,
+    commit
+  );
+  const invalidExecutionStats = await processRooms(
+    "invalid",
+    roomsSummary.invalid,
+    commit
+  );
+  const brokenExecutionStats = await processRooms(
+    "broken",
+    roomsSummary.broken,
+    commit
+  );
+  const roomsExecutionStats: RoomsStats = {
+    count: roomsCount,
+    done:
+      missingExecutionStats.done +
+      invalidExecutionStats.done +
+      brokenExecutionStats.done,
+    failed:
+      missingExecutionStats.failed +
+      invalidExecutionStats.failed +
+      brokenExecutionStats.failed,
+    skipped:
+      missingExecutionStats.skipped +
+      invalidExecutionStats.skipped +
+      brokenExecutionStats.skipped,
+  };
+
+  Report.logProgress<RoomsStats>(
+    "Completed",
+    "Cohab rooms synchronization complete",
+    "success",
+    {
+      data: [roomsExecutionStats],
+      reportFields: ["count", "done", "failed", "skipped"],
+    }
+  );
+
+  return { rooms: roomsExecutionStats };
 }
 
 async function syncStripeSubscriptions() {
   console.log("Hello");
 }
 
-export { syncUsers, syncStripeProducts, syncStripeSubscriptions };
+export { syncUsers, syncRooms, syncStripeSubscriptions };

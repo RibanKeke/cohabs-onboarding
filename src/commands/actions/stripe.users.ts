@@ -98,7 +98,7 @@ async function syncStripeUser(
     if (updatedUser) {
       return updatedUser;
     } else {
-      throw new Error(`User to update with id: ${cohabUser.id} as not found`);
+      throw new Error(`Updated user with id: ${cohabUser.id} was not found`);
     }
   };
   if (commit) {

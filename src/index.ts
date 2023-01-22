@@ -2,7 +2,7 @@ import process from "node:process";
 import * as dotenv from "dotenv";
 import prompts from "prompts";
 import {
-  syncStripeProducts,
+  syncRooms,
   syncStripeSubscriptions,
   syncUsers,
 } from "./commands/stripe.commands";
@@ -59,12 +59,12 @@ dotenv.config({ path: ".env" });
 
   switch (commands.choice) {
     case 0: {
-      await syncUsers(true);
+      await syncUsers(false);
       break;
     }
 
     case 1: {
-      await syncStripeProducts();
+      await syncRooms(false);
       break;
     }
 
