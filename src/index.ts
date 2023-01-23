@@ -59,17 +59,17 @@ dotenv.config({ path: ".env" });
 
   switch (commands.choice) {
     case 0: {
-      await syncUsers(true);
+      await syncUsers(false);
       break;
     }
 
     case 1: {
-      await syncRooms(true);
+      await syncRooms(false);
       break;
     }
 
     case 2: {
-      await syncStripeSubscriptions(true);
+      await syncStripeSubscriptions(false);
       break;
     }
 
