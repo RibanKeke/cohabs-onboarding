@@ -78,7 +78,7 @@ dotenv.config({ path: ".env" });
     }
   }
   fs.writeFileSync(
-    `./cohabs-stripe-report-${new Date().toISOString()}.txt`,
+    `./reports/cohabs-stripe-report-${new Date().toISOString()}.txt`,
     report.getReport().join("\n")
   );
   await db.dispose();

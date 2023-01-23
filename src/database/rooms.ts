@@ -16,20 +16,20 @@ async function listCohabRooms() {
   const db = DatabaseService.getDb();
   const result = (await db.query(
     sql`
-select
-	r.id ,
-	r.active ,
-	r.deleted ,
-	r.location ,
-	r.description ,
-	r.rent ,
-	r.stripeProductId,
-	r.lockId ,
-	h.id as houseId
-from
-	rooms r
-left join houses h on
-	h.id = r.houseId ;
+    select
+      r.id ,
+      r.active ,
+      r.deleted ,
+      r.location ,
+      r.description ,
+      r.rent ,
+      r.stripeProductId,
+      r.lockId ,
+      h.id as houseId
+    from
+      rooms r
+    left join houses h on
+      h.id = r.houseId ;
 `
   )) as Array<Rooms>;
   console.log("Query result  rooms");
