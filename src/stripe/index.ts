@@ -15,4 +15,7 @@ export {
   createStripeProduct,
   createStripeSubscription,
   listStripeSubscription,
+  attachCustomerToPaymentMethod,
+  updateStripeCustomer,
+  createCustomerPaymentMethod,
 } from "./stripe";

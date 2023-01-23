@@ -56,15 +56,19 @@ async function createCustomerPaymentMethod(paymentType: "card") {
   const stripe = StripeService.getStripe();
   const cardNumber = "5555555555554444";
   const creditCardCVV = "123";
-  return await stripe.paymentMethods.create({
-    type: paymentType,
-    card: {
-      number: cardNumber,
-      cvc: creditCardCVV,
-      exp_month: 8,
-      exp_year: 2025,
-    },
-  });
+  return await stripe.paymentMethods
+    .create({
+      type: paymentType,
+      card: {
+        number: cardNumber,
+        cvc: creditCardCVV,
+        exp_month: 8,
+        exp_year: 2025,
+      },
+    })
+    .then((StripeResponse) => {
+      return StripeResponse as Stripe.PaymentMethod;
+    });
 }
 
 async function attachCustomerToPaymentMethod(
@@ -72,7 +76,7 @@ async function attachCustomerToPaymentMethod(
   customerId: string
 ) {
   const stripe = StripeService.getStripe();
-  return await stripe.paymentMethods.attach(paymentMethodId, {
+  await stripe.paymentMethods.attach(paymentMethodId, {
     customer: customerId,
   });
 }

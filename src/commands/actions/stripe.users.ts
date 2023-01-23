@@ -4,12 +4,10 @@ import {
   NewStripeCustomer,
   createStripeCustomer,
   listStripeCustomers,
-} from "../../stripe";
-import {
   attachCustomerToPaymentMethod,
   createCustomerPaymentMethod,
   updateStripeCustomer,
-} from "../../stripe/stripe";
+} from "../../stripe";
 import report from "../../utils";
 import {
   ExecutionRecord,
