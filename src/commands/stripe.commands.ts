@@ -1,5 +1,6 @@
 import {
   ExecutionSummary,
+  LeasesStats,
   RoomsStats,
   UserStats,
 } from "./interfaces/commands.interface";
@@ -10,6 +11,11 @@ import {
   processRooms,
   reportInvalidRooms,
 } from "./actions/stripe.products";
+import {
+  checkStripeSubscriptions,
+  processLeases,
+  reportInvalidLeases,
+} from "./actions/stripe.subscriptions";
 
 /**
  * Sync cohabUser to Stripe: Add missing stripe user, create link in the database then report the changes.
@@ -101,8 +107,48 @@ async function syncRooms(commit: boolean) {
   return { rooms: roomsExecutionStats };
 }
 
-async function syncStripeSubscriptions() {
-  console.log("Hello");
+async function syncStripeSubscriptions(commit: boolean) {
+  Report.logProgress(
+    "...Progress:",
+    "Syncing cohab leases to stripe subscriptions",
+    "info"
+  );
+  const { leasesCount, leasesSummary } = await checkStripeSubscriptions();
+
+  const missingExecutionStats = await processLeases(
+    "missing",
+    leasesSummary.missing,
+    commit
+  );
+  const invalidExecutionStats = reportInvalidLeases(leasesSummary.invalid);
+
+  const brokenExecutionStats = await processLeases(
+    "broken",
+    leasesSummary.broken,
+    commit
+  );
+  const leasesExecutionStats: LeasesStats = {
+    synced: leasesSummary.synced.length,
+    count: leasesCount,
+    done: missingExecutionStats.done + brokenExecutionStats.done,
+    failed: missingExecutionStats.failed + brokenExecutionStats.failed,
+    skipped:
+      missingExecutionStats.skipped +
+      invalidExecutionStats.skipped +
+      brokenExecutionStats.skipped,
+  };
+
+  Report.logProgress<RoomsStats>(
+    "Completed",
+    "Cohab leases synchronization complete",
+    "success",
+    {
+      data: [leasesExecutionStats],
+      reportFields: ["count", "done", "failed", "skipped", "synced"],
+    }
+  );
+
+  return { rooms: leasesExecutionStats };
 }
 
 export { syncUsers, syncRooms, syncStripeSubscriptions };

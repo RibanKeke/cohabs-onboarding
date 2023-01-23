@@ -1,3 +1,4 @@
+import { faker } from "@faker-js/faker";
 import Stripe from "stripe";
 
 type NewStripeCustomer = Pick<
@@ -15,6 +16,15 @@ type NewStripeProduct = Pick<
 > & {
   metadata: {
     cohabRoomId: string;
+  };
+};
+
+type NewStripeSubscription = Pick<
+  Stripe.SubscriptionCreateParams,
+  "customer" | "items"
+> & {
+  metadata: {
+    cohabLeaseId: string;
   };
 };
 
@@ -42,11 +52,43 @@ class StripeService {
   }
 }
 
+async function createCustomerPaymentMethod(paymentType: "card") {
+  const stripe = StripeService.getStripe();
+  const cardNumber = "5555555555554444";
+  const creditCardCVV = "123";
+  return await stripe.paymentMethods.create({
+    type: paymentType,
+    card: {
+      number: cardNumber,
+      cvc: creditCardCVV,
+      exp_month: 8,
+      exp_year: 2025,
+    },
+  });
+}
+
+async function attachCustomerToPaymentMethod(
+  paymentMethodId: string,
+  customerId: string
+) {
+  const stripe = StripeService.getStripe();
+  return await stripe.paymentMethods.attach(paymentMethodId, {
+    customer: customerId,
+  });
+}
+
 async function createStripeCustomer(
-  newStripeUser: NewStripeCustomer
+  stripeCustomer: NewStripeCustomer
 ): Promise<Stripe.Customer> {
   const stripe = StripeService.getStripe();
-  return await stripe.customers.create(newStripeUser);
+  return await stripe.customers.create(stripeCustomer);
+}
+async function updateStripeCustomer(
+  customerId: string,
+  updateParams: Stripe.CustomerUpdateParams
+): Promise<Stripe.Customer> {
+  const stripe = StripeService.getStripe();
+  return await stripe.customers.update(customerId, updateParams);
 }
 
 async function listStripeCustomers() {
@@ -64,6 +106,17 @@ async function listStripeProducts() {
   return (await StripeService.getStripe().products.list()).data;
 }
 
+async function createStripeSubscription(
+  NewStripeSubscription: NewStripeSubscription
+): Promise<Stripe.Subscription> {
+  const stripe = StripeService.getStripe();
+  return await stripe.subscriptions.create(NewStripeSubscription);
+}
+
+async function listStripeSubscription() {
+  return (await StripeService.getStripe().subscriptions.list()).data;
+}
+
 export {
   StripeService,
   NewStripeCustomer,
@@ -71,5 +124,11 @@ export {
   listStripeCustomers,
   createStripeProduct,
   listStripeProducts,
+  createStripeSubscription,
+  listStripeSubscription,
+  createCustomerPaymentMethod,
+  attachCustomerToPaymentMethod,
   NewStripeProduct,
+  NewStripeSubscription,
+  updateStripeCustomer,
 };

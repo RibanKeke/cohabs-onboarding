@@ -1,4 +1,4 @@
-import { leases, Leases, RoomsView } from "./models";
+import { leases, Leases, LeasesView } from "./models";
 import { DatabaseService } from "./database";
 import { sql } from "@databases/mysql";
 
@@ -12,7 +12,7 @@ async function findLeaseByStripeSubscriptionId(stripeSubscriptionId: string) {
   return await leases(db).findOne({ stripeSubscriptionId });
 }
 
-async function listCohabLeases() {
+async function listCohabLeases(active = true) {
   const db = DatabaseService.getDb();
   const result = (await db.query(
     sql`
@@ -22,8 +22,10 @@ async function listCohabLeases() {
       endDate ,
       rentAmount ,
       name ,
+      status,
       stripeSubscriptionId,
       hr.houseId,
+      hr.houseName,
       hr.roomId,
       hr.stripeProductId,
       us.stripeCustomerId,
@@ -46,6 +48,7 @@ async function listCohabLeases() {
     (
       SELECT
         h.id as houseId,
+        h.name as houseName,
         r.id as roomId,
         r.stripeProductId ,
         r.rent
@@ -57,9 +60,10 @@ async function listCohabLeases() {
     )
     hr 
     ON
-      l.roomId = hr.roomId;
+      l.roomId = hr.roomId
+    WHERE l.status = 'active';
 `
-  )) as Array<RoomsView>;
+  )) as Array<LeasesView>;
   return result;
 }
 

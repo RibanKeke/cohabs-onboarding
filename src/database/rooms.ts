@@ -29,7 +29,8 @@ async function listCohabRooms() {
     from
       rooms r
     left join houses h on
-      h.id = r.houseId ;
+      h.id = r.houseId
+    where r.active = 1 ;
 `
   )) as Array<Rooms>;
   console.log("Query result  rooms");

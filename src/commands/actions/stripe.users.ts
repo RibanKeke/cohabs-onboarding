@@ -5,6 +5,11 @@ import {
   createStripeCustomer,
   listStripeCustomers,
 } from "../../stripe";
+import {
+  attachCustomerToPaymentMethod,
+  createCustomerPaymentMethod,
+  updateStripeCustomer,
+} from "../../stripe/stripe";
 import report from "../../utils";
 import {
   ExecutionRecord,
@@ -89,9 +94,16 @@ async function syncStripeUser(
     },
   };
   const execute = async () => {
-    const newStripeUser = await createStripeCustomer(stripeUser);
-    await updateUser(cohabUser.id, { stripeCustomerId: newStripeUser.id });
-    const updatedUser = await findUserByStripeCustomerId(newStripeUser.id);
+    const paymentMethod = await createCustomerPaymentMethod("card");
+    const stripeCustomer = await createStripeCustomer(stripeUser);
+    await attachCustomerToPaymentMethod(paymentMethod.id, stripeCustomer.id);
+    await updateStripeCustomer(stripeCustomer.id, {
+      invoice_settings: {
+        default_payment_method: paymentMethod.id,
+      },
+    });
+    await updateUser(cohabUser.id, { stripeCustomerId: stripeCustomer.id });
+    const updatedUser = await findUserByStripeCustomerId(stripeCustomer.id);
     if (updatedUser) {
       return updatedUser;
     } else {
@@ -142,7 +154,7 @@ async function processUsers(
   }
   report.logProgress<Users>(
     "...Processing:",
-    `${origin} stripe users`,
+    `${origin} stripe customers`,
     "info",
     {
       data: usersList,
@@ -173,7 +185,7 @@ async function processUsers(
   if (successfullUpdates.length > 0) {
     report.logProgress<Users>(
       "Success:",
-      `Successfully updated ${origin} stripe users`,
+      `Successfully updated ${origin} stripe customers`,
       "success",
       {
         data: successfullUpdates.map((result) => result.target),
@@ -191,7 +203,7 @@ async function processUsers(
   if (failedUpdates.length > 0) {
     report.logProgress<Users & { message?: string }>(
       "Failed:",
-      `${origin} stripe users`,
+      `${origin} stripe customers`,
       "danger",
       {
         data: failedUpdates.map((result) => ({
@@ -212,7 +224,7 @@ async function processUsers(
   if (skippedUpdates.length > 0) {
     report.logProgress<Users & { message: string }>(
       "Skipped:",
-      `${origin} stripe users`,
+      `${origin} stripe customers`,
       "warning",
       {
         data: skippedUpdates.map((result) => ({

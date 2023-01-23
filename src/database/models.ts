@@ -12,7 +12,7 @@ type Payments = Entities<"payments">;
 type Rooms = Entities<"rooms">;
 type Users = Entities<"users">;
 
-type RoomsView = Pick<
+type LeasesView = Pick<
   Leases,
   | "id"
   | "userId"
@@ -22,9 +22,12 @@ type RoomsView = Pick<
   | "name"
   | "stripeSubscriptionId"
   | "roomId"
+  | "status"
 > &
   Pick<Rooms, "stripeProductId" | "houseId"> &
-  Pick<Users, "lastName" | "firstName" | "stripeCustomerId">;
+  Pick<Users, "lastName" | "firstName" | "stripeCustomerId"> & {
+    houseName: string;
+  };
 
 export {
   Houses,
@@ -32,7 +35,7 @@ export {
   Payments,
   Rooms,
   Users,
-  RoomsView,
+  LeasesView,
   houses,
   leases,
   payments,

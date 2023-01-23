@@ -10,6 +10,11 @@ const initializeDatabase = (options: {
 }) => DatabaseService.initialize(options);
 
 export { findRoomByStripeProductId, listCohabRooms, updateRoom } from "./rooms";
+export {
+  findLeaseByStripeSubscriptionId,
+  listCohabLeases,
+  updateLease,
+} from "./leases";
 
 export { initializeDatabase, updateUser, findUserByStripeCustomerId };
-export { Houses, Leases, Payments, Rooms, Users } from "./models";
+export { Houses, Leases, Payments, Rooms, Users, LeasesView } from "./models";

@@ -8,8 +8,11 @@ export { initializeStripe };
 export {
   type NewStripeCustomer,
   type NewStripeProduct,
+  type NewStripeSubscription,
   listStripeCustomers,
   createStripeCustomer,
   listStripeProducts,
   createStripeProduct,
+  createStripeSubscription,
+  listStripeSubscription,
 } from "./stripe";

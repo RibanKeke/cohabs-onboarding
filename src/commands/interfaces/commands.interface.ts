@@ -1,4 +1,4 @@
-import { Leases, Rooms, Users } from "../../database";
+import { Leases, LeasesView, Rooms, Users } from "../../database";
 
 type ExecutionStatus = "done" | "failed" | "new";
 type RecordStatus = "missing" | "invalid" | "synced" | "broken";
@@ -15,7 +15,8 @@ type UpdateResult<T> = {
 
 type UsersSummary = Record<RecordStatus, RecordSummary<Users>>;
 type RoomsSummary = Record<RecordStatus, RecordSummary<Rooms>>;
-type LeasesSummary = Record<RecordStatus, RecordSummary<Leases>>;
+type LeasesSummary = Record<RecordStatus, RecordSummary<LeasesView>>;
+
 type ExecutionStats = {
   done: number;
   failed: number;
@@ -31,7 +32,9 @@ type UserStats = {
 interface RoomsStats extends UserStats {
   synced: number;
 }
-type LeasesStats = UserStats;
+interface LeasesStats extends UserStats {
+  synced: number;
+}
 interface ExecutionSummary {
   users?: UserStats;
   rooms?: RoomsStats;

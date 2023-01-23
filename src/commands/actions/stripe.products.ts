@@ -134,7 +134,7 @@ async function checkStripeProducts(): Promise<{
  * @param commit Flag for commit
  * @returns UpdateResult<Rooms>
  */
-async function syncStripeRoom(
+async function syncStripeProduct(
   cohabRoom: Rooms,
   commit: boolean
 ): Promise<UpdateResult<Rooms>> {
@@ -150,7 +150,7 @@ async function syncStripeRoom(
       recurring: {
         interval: "month",
       },
-      unit_amount: Number(cohabRoom.rent),
+      unit_amount: Number(String(cohabRoom.rent).split(".").join("")),
     },
   };
   const execute = async () => {
@@ -203,7 +203,7 @@ function reportInvalidRooms(
   );
   report.logProgress<Rooms & { message: string }>(
     "...Reporting:",
-    "Invalid cohab rooms - These records are skipped \n Please fix the issue and run the script again.",
+    "Invalid cohab products - These records are skipped \n Please fix the issue and run the script again.",
     "warning",
     {
       data: roomsList,
@@ -228,7 +228,7 @@ async function processRooms(
   }
   report.logProgress<Rooms>(
     "...Processing:",
-    `${origin} stripe rooms`,
+    `${origin} stripe products`,
     "info",
     {
       data: roomsList,
@@ -237,7 +237,7 @@ async function processRooms(
   );
   const updateResult = await Promise.all(
     roomsList.map((missingRecord) => {
-      return syncStripeRoom(missingRecord, commit);
+      return syncStripeProduct(missingRecord, commit);
     })
   );
   const successfullUpdates = updateResult.filter(
@@ -253,7 +253,7 @@ async function processRooms(
   if (successfullUpdates.length > 0) {
     report.logProgress<Rooms>(
       "Success:",
-      `Successfully updated ${origin} stripe rooms`,
+      `Successfully updated ${origin} stripe products`,
       "success",
       {
         data: successfullUpdates.map((result) => result.target),
@@ -271,7 +271,7 @@ async function processRooms(
   if (failedUpdates.length > 0) {
     report.logProgress<Rooms & { message?: string }>(
       "Failed:",
-      `${origin} stripe rooms`,
+      `${origin} stripe products`,
       "danger",
       {
         data: failedUpdates.map((result) => ({
@@ -293,7 +293,7 @@ async function processRooms(
   if (skippedUpdates.length > 0) {
     report.logProgress<Rooms & { message: string }>(
       "Skipped:",
-      `${origin} stripe rooms`,
+      `${origin} stripe products`,
       "warning",
       {
         data: skippedUpdates.map((result) => ({
@@ -321,6 +321,6 @@ async function processRooms(
 export {
   checkStripeProducts,
   processRooms,
-  syncStripeRoom,
+  syncStripeProduct,
   reportInvalidRooms,
 };
