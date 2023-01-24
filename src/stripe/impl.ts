@@ -15,12 +15,22 @@ class StripeService {
     });
   }
 
+  /**
+   * Initialize Stripe API
+   * @param apiKey Stripe api key linked to the account
+   * @param stripeAccount Stripe owner account
+   */
   static initialize(apiKey: string, stripeAccount: string) {
     if (!StripeService.instance) {
       this.instance = new StripeService(apiKey, stripeAccount);
     }
   }
 
+  /**
+   * Get an initialized instance of the Stripe API
+   * @returns Stripe instance
+   * @throws "Stripe is not initialized" if called before initializing Stripe api with credentials
+   */
   static getStripe() {
     if (this.instance) {
       return this.instance.stripe;

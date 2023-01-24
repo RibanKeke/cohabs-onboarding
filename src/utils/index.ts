@@ -5,5 +5,6 @@ const report = {
   clearReport: ReportAgent.clearReport,
   getReport: ReportAgent.getReport,
 };
+export { Choice, confirmCommit, selectCommands } from "./prompts";
 
 export default report;

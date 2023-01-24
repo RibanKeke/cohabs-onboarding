@@ -17,7 +17,7 @@ import {
   RecordStatus,
   RecordSummary,
   UpdateResult,
-} from "../interfaces/commands.interface";
+} from "../commands.interface";
 
 function checkLease(
   cohabLease: LeasesView,

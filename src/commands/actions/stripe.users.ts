@@ -16,7 +16,25 @@ import {
   RecordSummary,
   UpdateResult,
   UsersSummary,
-} from "../interfaces/commands.interface";
+} from "../commands.interface";
+
+function checkUser(
+  cohabUser: Users,
+  stripeCustomerIds: Array<string>
+): { missing: boolean; broken: boolean; synced: boolean } {
+  const missing = cohabUser.stripeCustomerId === null;
+  const broken =
+    cohabUser.stripeCustomerId !== null &&
+    !stripeCustomerIds.includes(cohabUser.stripeCustomerId);
+  const synced =
+    Boolean(cohabUser.stripeCustomerId) &&
+    stripeCustomerIds.includes(cohabUser?.stripeCustomerId ?? "");
+  return {
+    missing,
+    broken,
+    synced,
+  };
+}
 
 /**
  * Check if cohab tenant has linked stripe customer
@@ -34,12 +52,18 @@ async function checkStripeUsers(): Promise<{
   const usersCount = cohabsUsers.length;
   const usersSummary = cohabsUsers.reduce(
     (result, cohabUser) => {
-      const { missing, invalid }: { missing: boolean; invalid: boolean } =
-        cohabUser.stripeCustomerId === null
-          ? { missing: true, invalid: false }
-          : customersIds.includes(cohabUser.stripeCustomerId)
-          ? { missing: false, invalid: false }
-          : { missing: false, invalid: true };
+      const { missing, broken, synced } = checkUser(cohabUser, customersIds);
+      if (synced) {
+        const userExecutionRecord: ExecutionRecord<Users> = {
+          message: "",
+          status: "new",
+          item: cohabUser,
+        };
+        return {
+          ...result,
+          synced: [...result.synced, userExecutionRecord],
+        };
+      }
 
       if (missing) {
         const userExecutionRecord: ExecutionRecord<Users> = {
@@ -53,16 +77,16 @@ async function checkStripeUsers(): Promise<{
         };
       }
 
-      if (invalid) {
+      if (broken) {
         const userExecutionRecord: ExecutionRecord<Users> = {
           message: "",
           status: "new",
           item: cohabUser,
         };
-        const invalidResult = [...result.invalid, userExecutionRecord];
+        const invalidResult = [...result.broken, userExecutionRecord];
         return {
           ...result,
-          invalid: invalidResult,
+          broken: invalidResult,
         };
       }
       return result;

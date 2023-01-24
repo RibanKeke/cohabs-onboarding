@@ -15,6 +15,11 @@ class DatabaseService {
     );
   }
 
+  /**
+   * Initialize the database connection pool
+   * @param options {    host: string; port: number; user: string; password: string; database: string;}
+   * @returns ConnectionPool (@database/mysql)
+   */
   static initialize(options: {
     host: string;
     port: number;
@@ -28,6 +33,11 @@ class DatabaseService {
     return this.instance.db;
   }
 
+  /**
+   * Get an initialized database connection pool
+   * @returns ConnectionPool
+   * @throws "Database is not initialized" if it's called before initializing the database
+   */
   static getDb() {
     if (this.instance) {
       return this.instance.db;

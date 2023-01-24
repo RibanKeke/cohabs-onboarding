@@ -1,5 +1,5 @@
 import { leases, Leases, LeasesView } from "./models";
-import { DatabaseService } from "./database";
+import { DatabaseService } from "./impl";
 import { sql } from "@databases/mysql";
 
 async function updateLease(id: string, updateValues: Partial<Leases>) {

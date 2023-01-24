@@ -1,5 +1,5 @@
 import { users, Users } from "./models";
-import { DatabaseService } from "./database";
+import { DatabaseService } from "./impl";
 
 async function updateUser(id: string, updateValues: Partial<Users>) {
   const db = DatabaseService.getDb();

@@ -127,12 +127,12 @@ function getTestCohabUsers(stripeCustomerIds: Array<string | null>) {
 describe("Check cohabsUsers have a stripe account", () => {
   const validIds = ["valid1", "valid2", "valid3"];
   const missingIds = [null, null];
-  const invalidIds = ["invalid1"];
+  const brokenIds = ["invalid1"];
   test("Test for missing and invalid stripeUsers", async () => {
     const cohabUsers = [
       ...getTestCohabUsers(validIds),
       ...getTestCohabUsers(missingIds),
-      ...getTestCohabUsers(invalidIds),
+      ...getTestCohabUsers(brokenIds),
     ];
     const stripeCustomers = [...getTestStripeCustomers(validIds)];
 
@@ -142,15 +142,15 @@ describe("Check cohabsUsers have a stripe account", () => {
     jest.spyOn(DatabaseUsers, "listCohabUsers").mockResolvedValue(cohabUsers);
 
     const { usersSummary } = await checkStripeUsers();
-    expect(Object.keys(usersSummary.invalid as object).length).toEqual(1);
+    expect(Object.keys(usersSummary.broken as object).length).toEqual(1);
     expect(
-      Object.values(usersSummary.invalid as object)
+      Object.values(usersSummary.broken as object)
         .map((v) => v.item.stripeCustomerId)
-        .includes(invalidIds[0])
+        .includes(brokenIds[0])
     );
     expect(Object.keys(usersSummary.missing as object).length).toEqual(2);
-    expect(usersSummary.broken).toEqual([]);
-    expect(usersSummary.synced).toEqual([]);
+    expect(usersSummary.invalid).toEqual([]);
+    expect(usersSummary.synced.length).toEqual(3);
   });
 });
 

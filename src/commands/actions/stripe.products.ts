@@ -17,7 +17,7 @@ import {
   RecordSummary,
   RoomsSummary,
   UpdateResult,
-} from "../interfaces/commands.interface";
+} from "../commands.interface";
 
 function checkRoom(
   cohabRoom: Rooms,
@@ -204,7 +204,7 @@ function reportInvalidRooms(
   report.logProgress<Rooms & { message: string }>(
     "...Reporting:",
     "Invalid cohab products - These records are skipped \n Please fix the issue and run the script again.",
-    "warning",
+    "danger",
     {
       data: roomsList,
       reportFields: ["active", "id", "houseId", "stripeProductId", "message"],
