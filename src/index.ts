@@ -1,15 +1,16 @@
-import process from "node:process";
-import fs from "fs";
 import * as dotenv from "dotenv";
+import fs from "fs";
 import prompts from "prompts";
+import report from "./utils";
+import { initializeDatabase } from "./database";
+import { initializeStripe } from "./stripe";
+import process from "node:process";
 import {
+  runAll,
+  syncLeases,
   syncRooms,
-  syncStripeSubscriptions,
   syncUsers,
 } from "./commands/stripe.commands";
-import { initializeStripe } from "./stripe";
-import { initializeDatabase } from "./database";
-import report from "./utils";
 
 dotenv.config({ path: ".env" });
 
@@ -32,6 +33,21 @@ dotenv.config({ path: ".env" });
     "start"
   );
 
+  const { confirm } = await prompts<"confirm">({
+    type: "confirm",
+    name: "confirm",
+    message: "To run the command in  commit mode,\nplease confirm?",
+    initial: false,
+  });
+
+  if (confirm) {
+    report.logProgress(
+      "ATTENTION",
+      "All detected missing links will be created and added to \n the database",
+      "danger"
+    );
+  }
+
   // Prompt user to select command to execute
   const commands = await prompts<"choice">({
     type: "select",
@@ -53,23 +69,37 @@ dotenv.config({ path: ".env" });
         description: "Check and sync leases to stripe subscriptions",
         value: 2,
       },
+      {
+        title: "Rull all check",
+        description: "Runs all the check in sequence users -> rooms -> leases",
+        value: 3,
+      },
+      {
+        title: "Cancel",
+        description: "Cancel execution",
+        value: 4,
+      },
     ],
     initial: 0,
   });
 
   switch (commands.choice) {
     case 0: {
-      await syncUsers(false);
+      await syncUsers(confirm);
       break;
     }
 
     case 1: {
-      await syncRooms(false);
+      await syncRooms(confirm);
       break;
     }
 
     case 2: {
-      await syncStripeSubscriptions(false);
+      await syncLeases(confirm);
+      break;
+    }
+    case 3: {
+      await runAll(confirm);
       break;
     }
 
@@ -77,9 +107,11 @@ dotenv.config({ path: ".env" });
       break;
     }
   }
-  fs.writeFileSync(
-    `./reports/cohabs-stripe-report-${new Date().toISOString()}.txt`,
-    report.getReport().join("\n")
-  );
+  if (commands.choice !== 4) {
+    fs.writeFileSync(
+      `./reports/cohabs-stripe-report-${new Date().toISOString()}.txt`,
+      report.getReport().join("\n")
+    );
+  }
   await db.dispose();
 })();

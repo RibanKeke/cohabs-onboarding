@@ -1,4 +1,4 @@
-import { StripeService } from "./stripe";
+import { StripeService } from "./impl";
 
 const initializeStripe = (apiKey: string, stripeAccount: string) => {
   StripeService.initialize(apiKey, stripeAccount);
@@ -18,4 +18,4 @@ export {
   attachCustomerToPaymentMethod,
   updateStripeCustomer,
   createCustomerPaymentMethod,
-} from "./stripe";
+} from "./impl";

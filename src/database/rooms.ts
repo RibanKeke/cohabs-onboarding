@@ -33,8 +33,6 @@ async function listCohabRooms() {
     where r.active = 1 ;
 `
   )) as Array<Rooms>;
-  console.log("Query result  rooms");
-  console.log(JSON.stringify(result, null, 2));
   return result;
 }
 

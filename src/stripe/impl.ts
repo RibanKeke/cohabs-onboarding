@@ -1,32 +1,9 @@
-import { faker } from "@faker-js/faker";
 import Stripe from "stripe";
-
-type NewStripeCustomer = Pick<
-  Stripe.CustomerCreateParams,
-  "description" | "email" | "name" | "phone"
-> & {
-  metadata: {
-    cohabUserId: string;
-  };
-};
-
-type NewStripeProduct = Pick<
-  Stripe.ProductCreateParams,
-  "active" | "default_price_data" | "description" | "name"
-> & {
-  metadata: {
-    cohabRoomId: string;
-  };
-};
-
-type NewStripeSubscription = Pick<
-  Stripe.SubscriptionCreateParams,
-  "customer" | "items"
-> & {
-  metadata: {
-    cohabLeaseId: string;
-  };
-};
+import {
+  NewStripeCustomer,
+  NewStripeProduct,
+  NewStripeSubscription,
+} from "./interface";
 
 class StripeService {
   private static instance: StripeService;

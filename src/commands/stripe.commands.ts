@@ -4,7 +4,6 @@ import {
   RoomsStats,
   UserStats,
 } from "./interfaces/commands.interface";
-import Report from "../utils";
 import { checkStripeUsers, processUsers } from "./actions/stripe.users";
 import {
   checkStripeProducts,
@@ -16,12 +15,15 @@ import {
   processLeases,
   reportInvalidLeases,
 } from "./actions/stripe.subscriptions";
+import report from "../utils";
 
 /**
- * Sync cohabUser to Stripe: Add missing stripe user, create link in the database then report the changes.
+ * Checks and synchronises cohabs users to stripe customers
+ * @param commit Enable automatic fix of detected issues
+ * @returns ExecutionSummary
  */
 async function syncUsers(commit: boolean): Promise<ExecutionSummary> {
-  Report.logProgress("...Progress:", "Syncing cohab users to stripe", "info");
+  report.logProgress("...Progress:", "Syncing cohab users to stripe", "info");
   const { usersCount, usersSummary } = await checkStripeUsers();
 
   const missingExecutionStats = await processUsers(
@@ -55,7 +57,7 @@ async function syncUsers(commit: boolean): Promise<ExecutionSummary> {
       brokenExecutionStats.skipped,
   };
 
-  Report.logProgress<UserStats>(
+  report.logProgress<UserStats>(
     "Completed",
     "Cohab users synchronization complete",
     "success",
@@ -68,8 +70,13 @@ async function syncUsers(commit: boolean): Promise<ExecutionSummary> {
   return { users: usersExecutionStats };
 }
 
+/**
+ * Checks and synchronises cohabs rooms to stripe products
+ * @param commit Enable automatic fix of detected issues
+ * @returns ExecutionSummary
+ */
 async function syncRooms(commit: boolean) {
-  Report.logProgress("...Progress:", "Syncing cohab rooms to stripe", "info");
+  report.logProgress("...Progress:", "Syncing cohab rooms to stripe", "info");
   const { roomsCount, roomsSummary } = await checkStripeProducts();
 
   const missingExecutionStats = await processRooms(
@@ -94,7 +101,7 @@ async function syncRooms(commit: boolean) {
       brokenExecutionStats.skipped,
   };
 
-  Report.logProgress<RoomsStats>(
+  report.logProgress<RoomsStats>(
     "Completed",
     "Cohab rooms synchronization complete",
     "success",
@@ -107,8 +114,13 @@ async function syncRooms(commit: boolean) {
   return { rooms: roomsExecutionStats };
 }
 
-async function syncStripeSubscriptions(commit: boolean) {
-  Report.logProgress(
+/**
+ * Checks and synchronises cohabs leases to stripe subscriptions
+ * @param commit Enable automatic fix of detected issues
+ * @returns ExecutionSummary
+ */
+async function syncLeases(commit: boolean) {
+  report.logProgress(
     "...Progress:",
     "Syncing cohab leases to stripe subscriptions",
     "info"
@@ -138,7 +150,7 @@ async function syncStripeSubscriptions(commit: boolean) {
       brokenExecutionStats.skipped,
   };
 
-  Report.logProgress<RoomsStats>(
+  report.logProgress<RoomsStats>(
     "Completed",
     "Cohab leases synchronization complete",
     "success",
@@ -151,4 +163,10 @@ async function syncStripeSubscriptions(commit: boolean) {
   return { rooms: leasesExecutionStats };
 }
 
-export { syncUsers, syncRooms, syncStripeSubscriptions };
+async function runAll(commit: boolean) {
+  await syncUsers(commit);
+  await syncRooms(commit);
+  await syncLeases(commit);
+}
+
+export { syncUsers, syncRooms, syncLeases, runAll };

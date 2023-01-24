@@ -88,7 +88,7 @@ class ReportAgent {
 
   /**
    * Returns current saved execution report
-   * @returns Save execution report
+   * @returns Saved execution report
    */
   static getReport(): string[] {
     if (this.instance) {

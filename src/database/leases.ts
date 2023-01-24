@@ -12,7 +12,7 @@ async function findLeaseByStripeSubscriptionId(stripeSubscriptionId: string) {
   return await leases(db).findOne({ stripeSubscriptionId });
 }
 
-async function listCohabLeases(active = true) {
+async function listCohabLeases() {
   const db = DatabaseService.getDb();
   const result = (await db.query(
     sql`
