@@ -186,11 +186,15 @@ async function syncLeases(
  */
 async function syncAll(commit: boolean) {
   report.logProgress("ALL SYNC", "Full Stripe synchronization started", "info");
-  const { users } = await syncUsers(commit);
-  const { rooms } = await syncRooms(commit);
-  const { leases } = await syncLeases(commit);
-  const AllSummary: Required<ExecutionSummary> = { users, rooms, leases };
-  report.logProgress<ExecutionSummary>(
+  const { users } = await syncUsers(commit, true);
+  const { rooms } = await syncRooms(commit, true);
+  const { leases } = await syncLeases(commit, true);
+  const AllSummary = {
+    users: JSON.stringify(users),
+    rooms: JSON.stringify(rooms),
+    leases: JSON.stringify(leases),
+  };
+  report.logProgress<typeof AllSummary>(
     "ALL SYNC",
     "All synchronization tasks completed, \n REPORT:",
     "success",

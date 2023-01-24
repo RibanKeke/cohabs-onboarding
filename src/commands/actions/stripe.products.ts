@@ -204,7 +204,7 @@ function reportInvalidRooms(
   report.logProgress<Rooms & { message: string }>(
     "...Reporting:",
     "Invalid cohab products - These records are skipped \n Please fix the issue and run the script again.",
-    "danger",
+    "warning",
     {
       data: roomsList,
       reportFields: ["active", "id", "houseId", "stripeProductId", "message"],
@@ -272,7 +272,7 @@ async function processRooms(
     report.logProgress<Rooms & { message?: string }>(
       "Failed:",
       `${origin} stripe products`,
-      "danger",
+      "failure",
       {
         data: failedUpdates.map((result) => ({
           ...result.target,

@@ -40,15 +40,34 @@ dotenv.config({ path: ".env" });
   }
 
   // Prompt to user available commands and excute selected command defined in COMMANDS
-  const command = await selectCommands(COMMANDS, confirm);
+  await selectCommands(COMMANDS, confirm)
+    .catch((err) => {
+      // Log any unexpected error and print report
+      const errorPayload: { message: string; stack: string } = {
+        message: err.message,
+        stack: JSON.stringify(err.stack),
+      };
+      report.logProgress<typeof errorPayload>(
+        "CRITICAL ERROR",
+        "An unexpected error occured",
+        "danger",
+        { data: [errorPayload], reportFields: ["message", "stack"] }
+      );
+      fs.writeFileSync(
+        `./reports/cohabs-stripe-report-${new Date().toISOString()}.error`,
+        report.getReport().join("\n")
+      );
+    })
+    .then((command) => {
+      // Skip execution report print when the script is cancelled
+      if (command?.choice !== 4) {
+        fs.writeFileSync(
+          `./reports/cohabs-stripe-report-${new Date().toISOString()}.txt`,
+          report.getReport().join("\n")
+        );
+      }
+    });
 
-  // Skip execution report print when the script is canceled
-  if (command.choice !== 4) {
-    fs.writeFileSync(
-      `./reports/cohabs-stripe-report-${new Date().toISOString()}.txt`,
-      report.getReport().join("\n")
-    );
-  }
   // Close database
   await db.dispose();
 })();

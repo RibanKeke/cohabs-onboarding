@@ -354,7 +354,7 @@ async function processLeases(
     report.logProgress<LeasesView & { message?: string }>(
       "Failed:",
       `${origin} stripe subscriptions`,
-      "danger",
+      "failure",
       {
         data: failedUpdates.map((result) => ({
           ...result.target,
