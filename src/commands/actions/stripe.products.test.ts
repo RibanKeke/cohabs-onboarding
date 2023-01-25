@@ -107,8 +107,8 @@ describe("Check cohabsUsers have a stripe account", () => {
     jest.spyOn(DatabaseRooms, "listCohabRooms").mockResolvedValue(cohabRooms);
 
     const { roomsSummary, roomsCount } = await checkStripeProducts();
-    expect(roomsSummary.invalid.length).toEqual(1);
-    expect(roomsSummary.synced.length).toEqual(3);
+    expect((roomsSummary?.invalid ?? []).length).toEqual(1);
+    expect((roomsSummary?.synced ?? []).length).toEqual(3);
     expect(roomsCount).toEqual(5);
   });
 });

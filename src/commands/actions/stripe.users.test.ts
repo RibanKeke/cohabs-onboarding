@@ -111,9 +111,6 @@ const paymentMethodData: Stripe.PaymentMethod = {
   type: "card",
 };
 
-function getTestStripeCustomers(ids: Array<string>) {
-  return ids.map((id) => ({ ...testStripeCustomer, id }));
-}
 const randomId = () => Math.floor(100000 + Math.random() * 900000);
 
 function getTestCohabUsers(stripeCustomerIds: Array<string | null>) {
@@ -125,32 +122,80 @@ function getTestCohabUsers(stripeCustomerIds: Array<string | null>) {
 }
 
 describe("Check cohabsUsers have a stripe account", () => {
-  const validIds = ["valid1", "valid2", "valid3"];
-  const missingIds = [null, null];
-  const brokenIds = ["invalid1"];
-  test("Test for missing and invalid stripeUsers", async () => {
-    const cohabUsers = [
-      ...getTestCohabUsers(validIds),
-      ...getTestCohabUsers(missingIds),
-      ...getTestCohabUsers(brokenIds),
-    ];
-    const stripeCustomers = [...getTestStripeCustomers(validIds)];
+  test("Test for synced stripe user", async () => {
+    const syncedId = "synced_id";
+    const cohabUsers = [...getTestCohabUsers([syncedId])];
 
-    jest
-      .spyOn(StripeService, "listStripeCustomers")
-      .mockResolvedValue(stripeCustomers);
+    jest.spyOn(StripeService, "getStripeCustomer").mockResolvedValue({
+      ...testStripeCustomer,
+      id: syncedId,
+      lastResponse: {
+        headers: {},
+        requestId: "",
+        statusCode: 1,
+      },
+    });
     jest.spyOn(DatabaseUsers, "listCohabUsers").mockResolvedValue(cohabUsers);
 
     const { usersSummary } = await checkStripeUsers();
-    expect(Object.keys(usersSummary.broken as object).length).toEqual(1);
-    expect(
-      Object.values(usersSummary.broken as object)
-        .map((v) => v.item.stripeCustomerId)
-        .includes(brokenIds[0])
-    );
-    expect(Object.keys(usersSummary.missing as object).length).toEqual(2);
-    expect(usersSummary.invalid).toEqual([]);
-    expect(usersSummary.synced.length).toEqual(3);
+    expect(usersSummary.synced).toBeDefined;
+    expect(usersSummary.synced[0].item.stripeCustomerId).toEqual(syncedId);
+  });
+
+  test("Test for error stripe user", async () => {
+    const syncedId = "synced_id";
+    const cohabUsers = [...getTestCohabUsers([syncedId])];
+
+    jest
+      .spyOn(StripeService, "getStripeCustomer")
+      .mockRejectedValue(new Error("Stripe rate limit reached"));
+    jest.spyOn(DatabaseUsers, "listCohabUsers").mockResolvedValue(cohabUsers);
+
+    const { usersSummary } = await checkStripeUsers();
+    expect(usersSummary.error).toBeDefined;
+    expect(usersSummary.error[0].item.id).toEqual(cohabUsers[0].id);
+  });
+
+  test("Test for broken stripe user", async () => {
+    const syncedId = "synced_id";
+    const cohabUsers = [...getTestCohabUsers([syncedId])];
+
+    jest.spyOn(StripeService, "getStripeCustomer").mockResolvedValue({
+      ...testStripeCustomer,
+      id: syncedId,
+      deleted: true,
+      lastResponse: {
+        headers: {},
+        requestId: "",
+        statusCode: 1,
+      },
+    });
+    jest.spyOn(DatabaseUsers, "listCohabUsers").mockResolvedValue(cohabUsers);
+
+    const { usersSummary } = await checkStripeUsers();
+    expect(usersSummary.broken).toBeDefined;
+    expect(usersSummary.broken[0].item.id).toEqual(cohabUsers[0].id);
+  });
+
+  test("Test for missing stripe user", async () => {
+    const syncedId = "synced_id";
+    const cohabUsers = [...getTestCohabUsers([null])];
+
+    jest.spyOn(StripeService, "getStripeCustomer").mockResolvedValue({
+      ...testStripeCustomer,
+      id: syncedId,
+      deleted: true,
+      lastResponse: {
+        headers: {},
+        requestId: "",
+        statusCode: 1,
+      },
+    });
+    jest.spyOn(DatabaseUsers, "listCohabUsers").mockResolvedValue(cohabUsers);
+
+    const { usersSummary } = await checkStripeUsers();
+    expect(usersSummary.missing).toBeDefined;
+    expect(usersSummary.missing[0].item.id).toEqual(cohabUsers[0].id);
   });
 });
 

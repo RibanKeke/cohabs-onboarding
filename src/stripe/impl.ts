@@ -83,7 +83,19 @@ async function updateStripeCustomer(
 }
 
 async function listStripeCustomers() {
-  return (await StripeService.getStripe().customers.list()).data;
+  return (await StripeService.getStripe().customers.list({ limit: 100 })).data;
+}
+
+async function getStripeCustomer(stripeCustomerId: string) {
+  const stripe = StripeService.getStripe();
+  const stripeCustomer = await stripe.customers.retrieve(stripeCustomerId);
+  return stripeCustomer;
+}
+
+async function getStripeProduct(stripeProductId: string) {
+  const stripe = StripeService.getStripe();
+  const stripeCustomer = await stripe.products.retrieve(stripeProductId);
+  return stripeCustomer;
 }
 
 async function createStripeProduct(
@@ -94,7 +106,7 @@ async function createStripeProduct(
 }
 
 async function listStripeProducts() {
-  return (await StripeService.getStripe().products.list()).data;
+  return (await StripeService.getStripe().products.list({ limit: 100 })).data;
 }
 
 async function createStripeSubscription(
@@ -105,7 +117,8 @@ async function createStripeSubscription(
 }
 
 async function listStripeSubscription() {
-  return (await StripeService.getStripe().subscriptions.list()).data;
+  return (await StripeService.getStripe().subscriptions.list({ limit: 100 }))
+    .data;
 }
 
 export {
@@ -119,7 +132,9 @@ export {
   listStripeSubscription,
   createCustomerPaymentMethod,
   attachCustomerToPaymentMethod,
+  getStripeCustomer,
   NewStripeProduct,
   NewStripeSubscription,
   updateStripeCustomer,
+  getStripeProduct,
 };

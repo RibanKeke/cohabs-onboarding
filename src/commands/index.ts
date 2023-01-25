@@ -3,12 +3,12 @@ import { syncAll, syncLeases, syncRooms, syncUsers } from "./stripe.commands";
 
 const COMMANDS: Array<Choice> = [
   {
-    title: "Sync cohab user",
+    title: "Sync cohab users",
     description: "Check and sync users to stripe customers",
     call: syncUsers,
   },
   {
-    title: "Sync cohab room",
+    title: "Sync cohab rooms",
     description: "Check and sync rooms to stripe products",
     call: syncRooms,
   },

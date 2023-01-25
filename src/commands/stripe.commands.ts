@@ -35,34 +35,20 @@ async function syncUsers(
   const { usersCount, usersSummary } = await checkStripeUsers();
   const missingExecutionStats = await processUsers(
     "missing",
-    usersSummary.missing,
-    commit
-  );
-  const invalidExecutionStats = await processUsers(
-    "invalid",
-    usersSummary.invalid,
+    usersSummary.missing.map((missing) => missing.item),
     commit
   );
   const brokenExecutionStats = await processUsers(
     "broken",
-    usersSummary.broken,
+    usersSummary.broken.map((broken) => broken.item),
     commit
   );
   const usersExecutionStats: UserStats = {
     count: usersCount,
-    done:
-      missingExecutionStats.done +
-      invalidExecutionStats.done +
-      brokenExecutionStats.done,
-    failed:
-      missingExecutionStats.failed +
-      invalidExecutionStats.failed +
-      brokenExecutionStats.failed,
-    skipped:
-      missingExecutionStats.skipped +
-      invalidExecutionStats.skipped +
-      brokenExecutionStats.skipped,
-    synced: usersSummary.synced.length,
+    done: missingExecutionStats.done + brokenExecutionStats.done,
+    failed: missingExecutionStats.failed + brokenExecutionStats.failed,
+    skipped: missingExecutionStats.skipped + brokenExecutionStats.skipped,
+    synced: (usersSummary?.synced ?? []).length,
   };
   report.logProgress<UserStats>(
     `${step ? "Sync step: USERS" : "Sync USERS"}`,
@@ -95,17 +81,17 @@ async function syncRooms(
 
   const missingExecutionStats = await processRooms(
     "missing",
-    roomsSummary.missing,
+    roomsSummary.missing.map((missing) => missing.item),
     commit
   );
   const invalidExecutionStats = reportInvalidRooms(roomsSummary.invalid);
   const brokenExecutionStats = await processRooms(
     "broken",
-    roomsSummary.broken,
+    roomsSummary.broken.map((broken) => broken.item),
     commit
   );
   const roomsExecutionStats: RoomsStats = {
-    synced: roomsSummary.synced.length,
+    synced: (roomsSummary?.synced ?? []).length,
     count: roomsCount,
     done: missingExecutionStats.done + brokenExecutionStats.done,
     failed: missingExecutionStats.failed + brokenExecutionStats.failed,
@@ -157,7 +143,7 @@ async function syncLeases(
     commit
   );
   const leasesExecutionStats: LeasesStats = {
-    synced: leasesSummary.synced.length,
+    synced: (leasesSummary?.synced ?? []).length,
     count: leasesCount,
     done: missingExecutionStats.done + brokenExecutionStats.done,
     failed: missingExecutionStats.failed + brokenExecutionStats.failed,

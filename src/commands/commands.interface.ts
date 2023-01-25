@@ -1,9 +1,6 @@
 import { LeasesView, Rooms, Users } from "../database";
-type ExecutionStatus = "done" | "failed" | "new";
-type RecordStatus = "missing" | "invalid" | "synced" | "broken";
-type ExecutionRecord<T> = { item: T; status: ExecutionStatus; message: string };
 
-type RecordSummary<T> = Array<ExecutionRecord<T>>;
+type RecordStatus = "missing" | "invalid" | "synced" | "broken" | "error";
 
 type UpdateResult<T> = {
   id: string | undefined;
@@ -12,9 +9,15 @@ type UpdateResult<T> = {
   message?: string;
 };
 
-type UsersSummary = Record<RecordStatus, RecordSummary<Users>>;
-type RoomsSummary = Record<RecordStatus, RecordSummary<Rooms>>;
-type LeasesSummary = Record<RecordStatus, RecordSummary<LeasesView>>;
+type CheckResult<T> = {
+  item: T;
+  status: RecordStatus;
+  message?: string;
+};
+
+type UsersSummary = Record<RecordStatus, Array<CheckResult<Users>>>;
+type RoomsSummary = Record<RecordStatus, Array<CheckResult<Rooms>>>;
+type LeasesSummary = Record<RecordStatus, Array<CheckResult<LeasesView>>>;
 
 type ExecutionStats = {
   done: number;
@@ -41,14 +44,13 @@ interface ExecutionSummary {
 export {
   ExecutionStats,
   ExecutionSummary,
-  ExecutionRecord,
   UpdateResult,
   UsersSummary,
-  RecordSummary,
   RecordStatus,
   UserStats,
   RoomsSummary,
   RoomsStats,
   LeasesSummary,
   LeasesStats,
+  CheckResult,
 };

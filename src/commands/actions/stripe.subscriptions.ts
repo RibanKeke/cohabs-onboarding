@@ -11,11 +11,9 @@ import {
 } from "../../stripe";
 import report from "../../utils";
 import {
-  ExecutionRecord,
   ExecutionStats,
   LeasesSummary,
   RecordStatus,
-  RecordSummary,
   UpdateResult,
 } from "../commands.interface";
 

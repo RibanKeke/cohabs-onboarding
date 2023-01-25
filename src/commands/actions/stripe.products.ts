@@ -6,103 +6,64 @@ import {
 } from "../../database";
 import {
   createStripeProduct,
-  listStripeProducts,
+  getStripeCustomer,
   NewStripeProduct,
 } from "../../stripe";
 import report from "../../utils";
 import {
-  ExecutionRecord,
+  CheckResult,
   ExecutionStats,
   RecordStatus,
-  RecordSummary,
   RoomsSummary,
   UpdateResult,
 } from "../commands.interface";
 
-function checkRoom(
-  cohabRoom: Rooms,
-  stripeProductIds: Array<string>
-): { missing: boolean; broken: boolean; synced: boolean } {
-  const missing = cohabRoom.stripeProductId === null;
-  const broken =
-    cohabRoom.stripeProductId !== null &&
-    !stripeProductIds.includes(cohabRoom.stripeProductId);
-  const synced =
-    Boolean(cohabRoom.houseId) &&
-    Boolean(cohabRoom.stripeProductId) &&
-    stripeProductIds.includes(cohabRoom?.stripeProductId ?? "");
-  return {
-    missing,
-    broken,
-    synced,
-  };
-}
-
-function checkVerifiedRooms(
-  verifiedRooms: Array<Rooms>,
-  productIds: Array<string>
-): RoomsSummary {
-  const roomsSummary = verifiedRooms.reduce(
-    (result, cohabRoom) => {
-      const { missing, broken, synced } = checkRoom(cohabRoom, productIds);
-
-      if (missing) {
-        const roomExecutionRecord: ExecutionRecord<Rooms> = {
-          message: "",
-          status: "new",
-          item: cohabRoom,
-        };
+async function checkProductLink(
+  cohabRooms: Array<Rooms>
+): Promise<RoomsSummary> {
+  const execute = async (cohabRoom: Rooms): Promise<CheckResult<Rooms>> => {
+    try {
+      const stripeCustomer = await getStripeCustomer(cohabRoom.id);
+      if (stripeCustomer?.deleted || stripeCustomer?.id === null) {
         return {
-          ...result,
-          missing: [...result.missing, roomExecutionRecord],
+          item: cohabRoom,
+          status: "broken",
+          message: "Customer missing or deleted",
         };
       }
-
-      if (synced) {
-        const roomExecutionRecord: ExecutionRecord<Rooms> = {
-          message: "",
-          status: "done",
-          item: cohabRoom,
-        };
-        return {
-          ...result,
-          synced: [...result.synced, roomExecutionRecord],
-        };
-      }
-
-      if (broken) {
-        const roomExecutionRecord: ExecutionRecord<Rooms> = {
-          message: "Rooms's product id is missing in stripe",
-          status: "new",
-          item: cohabRoom,
-        };
-        const invalidResult: RecordSummary<Rooms> = [
-          ...result.broken,
-          roomExecutionRecord,
-        ];
-        return {
-          ...result,
-          broken: invalidResult,
-        };
-      }
-      return result;
-    },
-    { missing: [], invalid: [], broken: [], synced: [] } as RoomsSummary
-  );
-  return roomsSummary;
-}
-
-function filterRoomsMissingHouseId(rooms: Array<Rooms>) {
-  return rooms
-    .filter((room) => room.houseId === null)
-    .map((room) => {
-      const executionRecord: ExecutionRecord<Rooms> = {
-        item: room,
-        message: "Invalid link to houseId",
-        status: "new",
+      return {
+        item: cohabRoom,
+        status: "synced",
       };
-      return executionRecord;
-    });
+    } catch (error) {
+      return {
+        item: cohabRoom,
+        status: "error",
+        message: (error as Error).message,
+      };
+    }
+  };
+
+  const results = await Promise.all(
+    cohabRooms.map((cohabRoom) => execute(cohabRoom))
+  );
+  const broken = results.filter(
+    (resultItem) => resultItem?.status === "broken"
+  );
+
+  const synced = results.filter(
+    (resultItem) => resultItem?.status === "synced"
+  );
+
+  const error = results.filter((resultItem) => resultItem?.status === "error");
+
+  return {
+    broken,
+    error,
+    synced,
+    invalid: [],
+    missing: [],
+  };
 }
 
 /**
@@ -115,16 +76,36 @@ async function checkStripeProducts(): Promise<{
   roomsSummary: RoomsSummary;
   roomsCount: number;
 }> {
-  const stripeProducts = await listStripeProducts();
   const cohabsRooms = await listCohabRooms();
-  const roomsMissingHouseId = filterRoomsMissingHouseId(cohabsRooms);
-  const verifiedRooms = cohabsRooms.filter((room) => room.houseId !== null);
-  const productIds = stripeProducts.map((c) => c.id);
   const roomsCount = cohabsRooms.length;
-  const roomsSummary = checkVerifiedRooms(verifiedRooms, productIds);
+  const missing = cohabsRooms
+    .filter(
+      (cohabRoom) =>
+        cohabRoom.stripeProductId === null || cohabRoom.stripeProductId === ""
+    )
+    .map(
+      (cohabRoom) =>
+        ({ status: "missing", item: cohabRoom } as CheckResult<Rooms>)
+    );
+  const validRooms = cohabsRooms.filter(
+    (cohabRoom) =>
+      cohabRoom.stripeProductId !== null && cohabRoom.houseId !== null
+  );
+  const invalid = cohabsRooms
+    .filter(
+      (cohabRoom) =>
+        cohabRoom.stripeProductId === null && cohabRoom.houseId === null
+    )
+    .map(
+      (cohabRoom) =>
+        ({ status: "invalid", item: cohabRoom } as CheckResult<Rooms>)
+    );
+
+  const { broken, synced, error } = await checkProductLink(validRooms);
+
   return {
     roomsCount,
-    roomsSummary: { ...roomsSummary, invalid: roomsMissingHouseId },
+    roomsSummary: { missing, broken, invalid, synced, error },
   };
 }
 
@@ -193,15 +174,15 @@ async function syncStripeProduct(
 }
 
 function reportInvalidRooms(
-  invalidRooms: RecordSummary<Rooms>
+  invalidRooms: Array<CheckResult<Rooms>>
 ): ExecutionStats {
-  const roomsList: Array<Rooms & { message: string }> = invalidRooms.map(
+  const roomsList: Array<Rooms & { message?: string }> = invalidRooms.map(
     (executionRecord) => ({
       ...executionRecord.item,
       message: executionRecord.message,
     })
   );
-  report.logProgress<Rooms & { message: string }>(
+  report.logProgress<Rooms & { message?: string }>(
     "...Reporting:",
     "Invalid cohab products - These records are skipped \n Please fix the issue and run the script again.",
     "warning",
@@ -215,10 +196,9 @@ function reportInvalidRooms(
 
 async function processRooms(
   origin: RecordStatus,
-  roomsSummary: RecordSummary<Rooms>,
+  roomsList: Array<Rooms>,
   commit: boolean
 ): Promise<ExecutionStats> {
-  const roomsList = roomsSummary.map((executionRecord) => executionRecord.item);
   if (roomsList.length === 0) {
     return {
       done: 0,

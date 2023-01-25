@@ -23,4 +23,5 @@ export {
   attachCustomerToPaymentMethod,
   updateStripeCustomer,
   createCustomerPaymentMethod,
+  getStripeCustomer,
 } from "./impl";

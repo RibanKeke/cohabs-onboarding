@@ -3,36 +3,69 @@ import { listCohabUsers } from "../../database/users";
 import {
   NewStripeCustomer,
   createStripeCustomer,
-  listStripeCustomers,
   attachCustomerToPaymentMethod,
   createCustomerPaymentMethod,
   updateStripeCustomer,
+  getStripeCustomer,
 } from "../../stripe";
 import report from "../../utils";
 import {
-  ExecutionRecord,
+  CheckResult,
   ExecutionStats,
   RecordStatus,
-  RecordSummary,
   UpdateResult,
   UsersSummary,
 } from "../commands.interface";
 
-function checkUser(
-  cohabUser: Users,
-  stripeCustomerIds: Array<string>
-): { missing: boolean; broken: boolean; synced: boolean } {
-  const missing = cohabUser.stripeCustomerId === null;
-  const broken =
-    cohabUser.stripeCustomerId !== null &&
-    !stripeCustomerIds.includes(cohabUser.stripeCustomerId);
-  const synced =
-    Boolean(cohabUser.stripeCustomerId) &&
-    stripeCustomerIds.includes(cohabUser?.stripeCustomerId ?? "");
+async function checkCustomerLink(
+  cohabUsers: Array<Users>
+): Promise<UsersSummary> {
+  const execute = async (
+    cohabUser: Required<Users>
+  ): Promise<CheckResult<Users>> => {
+    try {
+      const stripeCustomer = await getStripeCustomer(
+        cohabUser.stripeCustomerId ?? ""
+      );
+      if (stripeCustomer?.deleted || stripeCustomer?.id === null) {
+        return {
+          item: cohabUser,
+          status: "broken",
+          message: "Customer missing or deleted",
+        };
+      }
+      return {
+        item: cohabUser,
+        status: "synced",
+      };
+    } catch (error) {
+      return {
+        item: cohabUser,
+        status: "error",
+        message: (error as Error).message,
+      };
+    }
+  };
+
+  const results = await Promise.all(
+    cohabUsers.map((cohabUser) => execute(cohabUser))
+  );
+  const broken = results.filter(
+    (resultItem) => resultItem?.status === "broken"
+  );
+
+  const synced = results.filter(
+    (resultItem) => resultItem?.status === "synced"
+  );
+
+  const error = results.filter((resultItem) => resultItem?.status === "error");
+
   return {
-    missing,
     broken,
+    error,
     synced,
+    invalid: [],
+    missing: [],
   };
 }
 
@@ -46,54 +79,28 @@ async function checkStripeUsers(): Promise<{
   usersSummary: UsersSummary;
   usersCount: number;
 }> {
-  const stripeCustomers = await listStripeCustomers();
   const cohabsUsers = await listCohabUsers();
-  const customersIds = stripeCustomers.map((c) => c.id);
   const usersCount = cohabsUsers.length;
-  const usersSummary = cohabsUsers.reduce(
-    (result, cohabUser) => {
-      const { missing, broken, synced } = checkUser(cohabUser, customersIds);
-      if (synced) {
-        const userExecutionRecord: ExecutionRecord<Users> = {
-          message: "",
-          status: "new",
-          item: cohabUser,
-        };
-        return {
-          ...result,
-          synced: [...result.synced, userExecutionRecord],
-        };
-      }
-
-      if (missing) {
-        const userExecutionRecord: ExecutionRecord<Users> = {
-          message: "",
-          status: "new",
-          item: cohabUser,
-        };
-        return {
-          ...result,
-          missing: [...result.missing, userExecutionRecord],
-        };
-      }
-
-      if (broken) {
-        const userExecutionRecord: ExecutionRecord<Users> = {
-          message: "",
-          status: "new",
-          item: cohabUser,
-        };
-        const invalidResult = [...result.broken, userExecutionRecord];
-        return {
-          ...result,
-          broken: invalidResult,
-        };
-      }
-      return result;
-    },
-    { missing: [], invalid: [], broken: [], synced: [] } as UsersSummary
+  const missing = cohabsUsers
+    .filter(
+      (cohabUser) =>
+        cohabUser.stripeCustomerId === null || cohabUser.stripeCustomerId === ""
+    )
+    .map(
+      (cohabUser) =>
+        ({ status: "missing", item: cohabUser } as CheckResult<Users>)
+    );
+  const validUsers = cohabsUsers.filter(
+    (cohabUser) =>
+      cohabUser.stripeCustomerId !== null && cohabUser.stripeCustomerId !== ""
   );
-  return { usersCount, usersSummary };
+
+  const { broken, synced, error } = await checkCustomerLink(validUsers);
+
+  return {
+    usersCount,
+    usersSummary: { missing, broken, invalid: [], synced, error },
+  };
 }
 
 /**
@@ -163,11 +170,10 @@ async function syncStripeUser(
 
 async function processUsers(
   origin: RecordStatus,
-  recordItems: RecordSummary<Users>,
+  recordItems: Array<Users>,
   commit: boolean
 ): Promise<ExecutionStats> {
-  const usersList = recordItems.map((executionRecord) => executionRecord.item);
-  if (usersList.length === 0) {
+  if (recordItems.length === 0) {
     return {
       done: 0,
       failed: 0,
@@ -179,7 +185,7 @@ async function processUsers(
     `${origin} stripe customers`,
     "info",
     {
-      data: usersList,
+      data: recordItems,
       reportFields: [
         "active",
         "id",
@@ -190,8 +196,8 @@ async function processUsers(
     }
   );
   const updateResult = await Promise.all(
-    usersList.map((missingRecord) => {
-      return syncStripeUser(missingRecord, commit);
+    recordItems.map((cohabUser) => {
+      return syncStripeUser(cohabUser, commit);
     })
   );
   const successfullUpdates = updateResult.filter(
