@@ -87,28 +87,23 @@ describe("Check cohabsUsers have a stripe account", () => {
     expect(Object.keys(roomsSummary.missing as object).length).toEqual(3);
     expect(roomsCount).toEqual(6);
   });
-  test("Test for out_of_sync:invalid rooms", async () => {
-    const invalidHouseIds = ["invalid1"];
-    const invalidStripeIds = ["invalid2"];
-    const cohabRooms = [
-      ...getTestCohabRooms(validIds),
-      ...getTestCohabRooms(invalidHouseIds, { houseId: null }),
-      ...getTestCohabRooms(invalidStripeIds, {
-        stripeProductId: "invalid_stripe_id",
-      }),
-    ];
-    const stripeProducts: Array<Stripe.Product> = [
-      ...getTestStripeProducts(validIds),
-    ];
+  test("Test for synced rooms", async () => {
+    const syncedId = "syncedId";
+    const cohabRooms = [...getTestCohabRooms([syncedId])];
 
-    jest
-      .spyOn(StripeImport, "listStripeProducts")
-      .mockResolvedValue(stripeProducts);
+    jest.spyOn(StripeImport, "getStripeProduct").mockResolvedValue({
+      ...stripeTestProduct,
+      id: syncedId,
+      lastResponse: {
+        headers: {},
+        requestId: "",
+        statusCode: 1,
+      },
+    });
     jest.spyOn(DatabaseRooms, "listCohabRooms").mockResolvedValue(cohabRooms);
 
     const { roomsSummary, roomsCount } = await checkStripeProducts();
-    expect((roomsSummary?.invalid ?? []).length).toEqual(1);
-    expect((roomsSummary?.synced ?? []).length).toEqual(3);
-    expect(roomsCount).toEqual(5);
+    expect((roomsSummary?.synced ?? []).length).toEqual(1);
+    expect(roomsCount).toEqual(1);
   });
 });

@@ -6,7 +6,7 @@ import {
 } from "../../database";
 import {
   createStripeProduct,
-  getStripeCustomer,
+  getStripeProduct,
   NewStripeProduct,
 } from "../../stripe";
 import report from "../../utils";
@@ -23,12 +23,12 @@ async function checkProductLink(
 ): Promise<RoomsSummary> {
   const execute = async (cohabRoom: Rooms): Promise<CheckResult<Rooms>> => {
     try {
-      const stripeCustomer = await getStripeCustomer(cohabRoom.id);
+      const stripeCustomer = await getStripeProduct(cohabRoom.id);
       if (stripeCustomer?.deleted || stripeCustomer?.id === null) {
         return {
           item: cohabRoom,
           status: "broken",
-          message: "Customer missing or deleted",
+          message: "Product missing or deleted",
         };
       }
       return {
@@ -36,6 +36,13 @@ async function checkProductLink(
         status: "synced",
       };
     } catch (error) {
+      if ((error as unknown as { statusCode: number })?.statusCode === 404) {
+        return {
+          item: cohabRoom,
+          status: "broken",
+          message: (error as Error).message,
+        };
+      }
       return {
         item: cohabRoom,
         status: "error",
@@ -94,12 +101,17 @@ async function checkStripeProducts(): Promise<{
   const invalid = cohabsRooms
     .filter(
       (cohabRoom) =>
-        cohabRoom.stripeProductId === null && cohabRoom.houseId === null
+        cohabRoom.stripeProductId === null || cohabRoom.houseId === null
     )
-    .map(
-      (cohabRoom) =>
-        ({ status: "invalid", item: cohabRoom } as CheckResult<Rooms>)
-    );
+    .map((cohabRoom) => {
+      const message =
+        cohabRoom.houseId === null ? "Invalid link to houseId" : "";
+      return {
+        status: "invalid",
+        item: cohabRoom,
+        message,
+      } as CheckResult<Rooms>;
+    });
 
   const { broken, synced, error } = await checkProductLink(validRooms);
 

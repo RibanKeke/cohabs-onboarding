@@ -24,4 +24,6 @@ export {
   updateStripeCustomer,
   createCustomerPaymentMethod,
   getStripeCustomer,
+  getStripeProduct,
+  getStripeSubscription,
 } from "./impl";

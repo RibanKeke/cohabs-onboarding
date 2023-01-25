@@ -1,6 +1,8 @@
 import report from "../utils";
 import { checkStripeUsers, processUsers } from "./actions/stripe.users";
 import {
+  CheckResult,
+  ExecutionStats,
   ExecutionSummary,
   LeasesStats,
   RoomsStats,
@@ -16,6 +18,30 @@ import {
   processLeases,
   reportInvalidLeases,
 } from "./actions/stripe.subscriptions";
+import { LeasesView, Rooms, Users } from "../database";
+
+function reportCheckErrors<T>(
+  source: string,
+  errorItems: Array<CheckResult<T>>,
+  reportFields: Array<keyof T>
+): ExecutionStats {
+  const leasesList: Array<T & { message?: string }> = errorItems.map(
+    (executionRecord) => ({
+      ...executionRecord.item,
+      message: executionRecord.message,
+    })
+  );
+  report.logProgress<T & { message?: string }>(
+    `Errors:${source}`,
+    "Some records have failed during the check process",
+    "failure",
+    {
+      data: leasesList,
+      reportFields: [...reportFields, "message"],
+    }
+  );
+  return { done: 0, failed: 0, skipped: leasesList.length };
+}
 
 /**
  * Checks and synchronize cohabs users to stripe customers
@@ -43,12 +69,24 @@ async function syncUsers(
     usersSummary.broken.map((broken) => broken.item),
     commit
   );
+
+  if (usersSummary.error.length > 0) {
+    reportCheckErrors<Users>("USERS", usersSummary.error, [
+      "active",
+      "id",
+      "firstName",
+      "lastName",
+      "stripeCustomerId",
+    ]);
+  }
+
   const usersExecutionStats: UserStats = {
     count: usersCount,
     done: missingExecutionStats.done + brokenExecutionStats.done,
     failed: missingExecutionStats.failed + brokenExecutionStats.failed,
     skipped: missingExecutionStats.skipped + brokenExecutionStats.skipped,
     synced: (usersSummary?.synced ?? []).length,
+    error: usersSummary.error.length,
   };
   report.logProgress<UserStats>(
     `${step ? "Sync step: USERS" : "Sync USERS"}`,
@@ -78,18 +116,28 @@ async function syncRooms(
     "info"
   );
   const { roomsCount, roomsSummary } = await checkStripeProducts();
+  const invalidExecutionStats = reportInvalidRooms(roomsSummary.invalid);
 
   const missingExecutionStats = await processRooms(
     "missing",
     roomsSummary.missing.map((missing) => missing.item),
     commit
   );
-  const invalidExecutionStats = reportInvalidRooms(roomsSummary.invalid);
   const brokenExecutionStats = await processRooms(
     "broken",
     roomsSummary.broken.map((broken) => broken.item),
     commit
   );
+
+  if (roomsSummary.error.length > 0) {
+    reportCheckErrors<Rooms>("USERS", roomsSummary.error, [
+      "active",
+      "id",
+      "houseId",
+      "stripeProductId",
+    ]);
+  }
+
   const roomsExecutionStats: RoomsStats = {
     synced: (roomsSummary?.synced ?? []).length,
     count: roomsCount,
@@ -99,6 +147,7 @@ async function syncRooms(
       missingExecutionStats.skipped +
       invalidExecutionStats.skipped +
       brokenExecutionStats.skipped,
+    error: roomsSummary.error.length,
   };
 
   report.logProgress<RoomsStats>(
@@ -107,7 +156,7 @@ async function syncRooms(
     "success",
     {
       data: step ? [] : [roomsExecutionStats],
-      reportFields: ["count", "done", "failed", "skipped", "synced"],
+      reportFields: ["count", "done", "failed", "skipped", "synced", "error"],
     }
   );
 
@@ -142,6 +191,21 @@ async function syncLeases(
     leasesSummary.broken,
     commit
   );
+
+  if (leasesSummary.error.length > 0) {
+    reportCheckErrors<LeasesView>("USERS", leasesSummary.error, [
+      "id",
+      "name",
+      "firstName",
+      "lastName",
+      "roomId",
+      "houseId",
+      "stripeCustomerId",
+      "stripeProductId",
+      "stripeSubscriptionId",
+    ]);
+  }
+
   const leasesExecutionStats: LeasesStats = {
     synced: (leasesSummary?.synced ?? []).length,
     count: leasesCount,
@@ -151,6 +215,7 @@ async function syncLeases(
       missingExecutionStats.skipped +
       invalidExecutionStats.skipped +
       brokenExecutionStats.skipped,
+    error: leasesSummary.error.length,
   };
 
   report.logProgress<RoomsStats>(
@@ -159,7 +224,7 @@ async function syncLeases(
     "success",
     {
       data: step ? [] : [leasesExecutionStats],
-      reportFields: ["count", "done", "failed", "skipped", "synced"],
+      reportFields: ["count", "done", "failed", "skipped", "synced", "error"],
     }
   );
 

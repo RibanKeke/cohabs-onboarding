@@ -6,93 +6,85 @@ import {
 import { LeasesView } from "../../database/models";
 import {
   createStripeSubscription,
-  listStripeSubscription,
+  getStripeSubscription,
   NewStripeSubscription,
 } from "../../stripe";
 import report from "../../utils";
 import {
+  CheckResult,
   ExecutionStats,
   LeasesSummary,
   RecordStatus,
   UpdateResult,
 } from "../commands.interface";
 
-function checkLease(
-  cohabLease: LeasesView,
-  stripeSubscriptionIds: Array<string>
-): { missing: boolean; broken: boolean; synced: boolean } {
-  const missing = cohabLease.stripeSubscriptionId === null;
-  const broken =
-    cohabLease.stripeSubscriptionId !== null &&
-    !stripeSubscriptionIds.includes(cohabLease.stripeSubscriptionId);
-  const synced =
-    cohabLease.houseId !== null &&
-    cohabLease.stripeProductId !== null &&
-    cohabLease.stripeCustomerId !== null &&
-    cohabLease.userId !== null &&
-    stripeSubscriptionIds.includes(cohabLease?.stripeSubscriptionId ?? "");
-  return {
-    missing,
-    broken,
-    synced,
-  };
-}
-
-function checkVerifiedLeases(
-  verifiedLeases: Array<LeasesView>,
-  subscriptionIds: Array<string>
-): LeasesSummary {
-  const leasesSummary = verifiedLeases.reduce(
-    (result, cohabLease) => {
-      const { missing, broken, synced } = checkLease(
-        cohabLease,
-        subscriptionIds
+async function checkSubscriptionLink(
+  cohabLeases: Array<LeasesView>
+): Promise<LeasesSummary> {
+  const execute = async (
+    cohabLease: LeasesView
+  ): Promise<CheckResult<LeasesView>> => {
+    if (cohabLease.stripeCustomerId === null) {
+      return {
+        item: cohabLease,
+        status: "missing",
+      };
+    }
+    try {
+      const stripeProduct = await getStripeSubscription(
+        cohabLease.stripeSubscriptionId ?? ""
       );
-
-      if (missing) {
-        const roomExecutionRecord: ExecutionRecord<LeasesView> = {
-          message: "",
-          status: "new",
-          item: cohabLease,
-        };
+      if (stripeProduct?.id === null) {
         return {
-          ...result,
-          missing: [...result.missing, roomExecutionRecord],
+          item: cohabLease,
+          status: "broken",
+          message: "Product missing or deleted",
         };
       }
-
-      if (synced) {
-        const roomExecutionRecord: ExecutionRecord<LeasesView> = {
-          message: "",
-          status: "done",
-          item: cohabLease,
-        };
+      return {
+        item: cohabLease,
+        status: "synced",
+      };
+    } catch (error) {
+      if ((error as unknown as { statusCode: number })?.statusCode === 404) {
         return {
-          ...result,
-          synced: [...result.synced, roomExecutionRecord],
+          item: cohabLease,
+          status: "broken",
+          message: (error as Error).message,
         };
       }
+      return {
+        item: cohabLease,
+        status: "error",
+        message: (error as Error).message,
+      };
+    }
+  };
 
-      if (broken) {
-        const roomExecutionRecord: ExecutionRecord<LeasesView> = {
-          message: "Leases' subscription id is missing in stripe",
-          status: "new",
-          item: cohabLease,
-        };
-        const invalidResult: RecordSummary<LeasesView> = [
-          ...result.broken,
-          roomExecutionRecord,
-        ];
-        return {
-          ...result,
-          broken: invalidResult,
-        };
-      }
-      return result;
-    },
-    { missing: [], invalid: [], broken: [], synced: [] } as LeasesSummary
+  const results = await Promise.all(
+    cohabLeases.map((cohabLease) => execute(cohabLease))
   );
-  return leasesSummary;
+  const broken = results.filter(
+    (resultItem) => resultItem?.status === "broken"
+  );
+
+  const synced = results.filter(
+    (resultItem) => resultItem?.status === "synced"
+  );
+
+  const missing = results.filter(
+    (resultItem) => resultItem?.status === "missing"
+  );
+
+  const error = results.filter((resultItem) => resultItem?.status === "error");
+
+  return {
+    broken,
+    error,
+    synced,
+    invalid: [],
+    missing,
+  };
 }
 
 function filterInvalidLeases(leases: Array<LeasesView>) {
@@ -117,7 +109,7 @@ function filterInvalidLeases(leases: Array<LeasesView>) {
       const missingProductIdMessage = lease.stripeProductId
         ? ""
         : "Invalid link to stripeProductId.";
-      const executionRecord: ExecutionRecord<LeasesView> = {
+      const executionRecord: CheckResult<LeasesView> = {
         item: lease,
         message:
           missingUserIdMessage +
@@ -127,7 +119,7 @@ function filterInvalidLeases(leases: Array<LeasesView>) {
           missingProductIdMessage +
           " " +
           missingCustomerIdMessage,
-        status: "new",
+        status: "invalid",
       };
       return executionRecord;
     });
@@ -143,23 +135,19 @@ async function checkStripeSubscriptions(): Promise<{
   leasesSummary: LeasesSummary;
   leasesCount: number;
 }> {
-  const stripeSubscriptions = await listStripeSubscription();
   const cohabLeases = await listCohabLeases();
-  const invalidLeases = filterInvalidLeases(cohabLeases);
+  const invalid = filterInvalidLeases(cohabLeases);
   const verifiedLeases = cohabLeases.filter(
-    (lease) =>
-      !invalidLeases
-        .map((invalidLease) => invalidLease.item.id)
-        .includes(lease.id)
-  );
-  const subscriptionsIds = stripeSubscriptions.map(
-    (subscription) => subscription.id
+    (lease) => !invalid.map((invalid) => invalid.item.id).includes(lease.id)
   );
   const leasesCount = cohabLeases.length;
-  const leasesSummary = checkVerifiedLeases(verifiedLeases, subscriptionsIds);
+  const { broken, synced, error, missing } = await checkSubscriptionLink(
+    verifiedLeases
+  );
+
   return {
     leasesCount,
-    leasesSummary: { ...leasesSummary, invalid: invalidLeases },
+    leasesSummary: { missing, broken, invalid, synced, error },
   };
 }
 
@@ -244,15 +232,14 @@ async function syncStripeSubscription(
 }
 
 function reportInvalidLeases(
-  invalidLeases: RecordSummary<LeasesView>
+  invalidLeases: Array<CheckResult<LeasesView>>
 ): ExecutionStats {
-  const leasesList: Array<LeasesView & { message: string }> = invalidLeases.map(
-    (executionRecord) => ({
+  const leasesList: Array<LeasesView & { message?: string }> =
+    invalidLeases.map((executionRecord) => ({
       ...executionRecord.item,
       message: executionRecord.message,
-    })
-  );
-  report.logProgress<LeasesView & { message: string }>(
+    }));
+  report.logProgress<LeasesView & { message?: string }>(
     "...Reporting:",
     "Invalid cohab leases - These records are skipped \n Please fix the issue and run the script again.",
     "warning",
@@ -277,7 +264,7 @@ function reportInvalidLeases(
 
 async function processLeases(
   origin: RecordStatus,
-  leasesSummary: RecordSummary<LeasesView>,
+  leasesSummary: Array<CheckResult<LeasesView>>,
   commit: boolean
 ): Promise<ExecutionStats> {
   const leasesList = leasesSummary.map(

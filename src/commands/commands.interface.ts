@@ -30,6 +30,7 @@ type GenericStats = {
   skipped: number;
   done: number;
   synced: number;
+  error: number;
 };
 type UserStats = GenericStats;
 type RoomsStats = GenericStats;

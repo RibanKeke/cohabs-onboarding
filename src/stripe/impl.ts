@@ -98,6 +98,14 @@ async function getStripeProduct(stripeProductId: string) {
   return stripeCustomer;
 }
 
+async function getStripeSubscription(stripeSubscriptionId: string) {
+  const stripe = StripeService.getStripe();
+  const stripeCustomer = await stripe.subscriptions.retrieve(
+    stripeSubscriptionId
+  );
+  return stripeCustomer;
+}
+
 async function createStripeProduct(
   newStripeProduct: NewStripeProduct
 ): Promise<Stripe.Product> {
@@ -137,4 +145,5 @@ export {
   NewStripeSubscription,
   updateStripeCustomer,
   getStripeProduct,
+  getStripeSubscription,
 };
