@@ -23,8 +23,10 @@ async function checkProductLink(
 ): Promise<RoomsSummary> {
   const execute = async (cohabRoom: Rooms): Promise<CheckResult<Rooms>> => {
     try {
-      const stripeCustomer = await getStripeProduct(cohabRoom.id);
-      if (stripeCustomer?.deleted || stripeCustomer?.id === null) {
+      const stripeProduct = await getStripeProduct(
+        cohabRoom.stripeProductId ?? ""
+      );
+      if (stripeProduct?.id === null) {
         return {
           item: cohabRoom,
           status: "broken",
