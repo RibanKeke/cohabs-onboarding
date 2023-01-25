@@ -24,21 +24,21 @@ async function checkSubscriptionLink(
   const execute = async (
     cohabLease: LeasesView
   ): Promise<CheckResult<LeasesView>> => {
-    if (cohabLease.stripeCustomerId === null) {
+    if (cohabLease.stripeSubscriptionId === null) {
       return {
         item: cohabLease,
         status: "missing",
       };
     }
     try {
-      const stripeProduct = await getStripeSubscription(
+      const stripeSubscription = await getStripeSubscription(
         cohabLease.stripeSubscriptionId ?? ""
       );
-      if (stripeProduct?.id === null) {
+      if (stripeSubscription?.id === null) {
         return {
           item: cohabLease,
           status: "broken",
-          message: "Product missing or deleted",
+          message: "Subscription missing or deleted",
         };
       }
       return {
