@@ -94,13 +94,13 @@ Step 2: Sync each record first on stripe and update the database with stripe res
 ## Leases
 ### Assumptions
 Only active leases are included in the sync process.
-A lease is invalid for the next step of the process if it's not linked to valid a house, user or room.
+A lease is invalid for the next step of the process if it's not linked to a valid house, user or room.
 
 Invalid rooms are reported and skipped for the next steps of the process.
 
 In case a check triggers an error, the related record is skipped from the update process and reported.
 ### Solution
-Checks are based on a query (left join) including houseId (house), roomId (room), stripeCustomerId (users).
+Checks are based on a query (left join) including houseId (house), stripeProductId (room), stripeCustomerId (users).
 
 Step 1: Check leases and return leases sorted by status
 
@@ -148,8 +148,8 @@ For the moment the test coverage is minimal. This tool is aimed to execute batch
 - Send reports by mail or to a webhook when out-of-sync records are detected
 
 ## Added libraries and usage
-    "@databases/mysql": Typescript mysql client supported generated types
-    "@databases/mysql-typed": Typescript typing generator base
+    "@databases/mysql": Typescript mysql client supporting generated types from database schema
+    "@databases/mysql-typed": Typescript typing generator
     "prompts": Display interactive prompts to user
     "signale": User friendly console output with a clear indication of the steps and the results.
 ## Suggestions

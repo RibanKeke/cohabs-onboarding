@@ -103,17 +103,12 @@ function filterInvalidLeases(leases: Array<LeasesView>) {
       const missingCustomerIdMessage = lease.stripeCustomerId
         ? ""
         : "Invalid link to stripeCustomerId.";
-      const missingUserIdMessage = lease.userId
-        ? ""
-        : "Invalid link to userId.";
       const missingProductIdMessage = lease.stripeProductId
         ? ""
         : "Invalid link to stripeProductId.";
       const executionRecord: CheckResult<LeasesView> = {
         item: lease,
         message:
-          missingUserIdMessage +
-          " " +
           missingHouseIdMessage +
           " " +
           missingProductIdMessage +
