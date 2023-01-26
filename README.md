@@ -112,6 +112,13 @@ synced: Lease in sync with stripe
 
 Step 2: Sync each record first on stripe and update the database with stripe results.
 ## Usage
+#### Additional setup
+Add stripe account the to .env file
+
+`
+STRIPE_ACCOUNT=acct_1MxxxxCYxYYYxxxx
+`
+
 The solution is a CLI with a simple prompt interaction.
 
 /!\ By default the script runs in simulation mode, issues will be detected and reported but all sync actions are skipped and the detected issues are flagged as skipped.
