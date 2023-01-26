@@ -85,7 +85,7 @@ async function syncUsers(
     done: missingExecutionStats.done + brokenExecutionStats.done,
     failed: missingExecutionStats.failed + brokenExecutionStats.failed,
     skipped: missingExecutionStats.skipped + brokenExecutionStats.skipped,
-    synced: (usersSummary?.synced ?? []).length,
+    synced: usersSummary.synced.length,
     error: usersSummary.error.length,
   };
   report.logProgress<UserStats>(
@@ -139,7 +139,7 @@ async function syncRooms(
   }
 
   const roomsExecutionStats: RoomsStats = {
-    synced: (roomsSummary?.synced ?? []).length,
+    synced: roomsSummary.synced.length,
     count: roomsCount,
     done: missingExecutionStats.done + brokenExecutionStats.done,
     failed: missingExecutionStats.failed + brokenExecutionStats.failed,
@@ -207,7 +207,7 @@ async function syncLeases(
   }
 
   const leasesExecutionStats: LeasesStats = {
-    synced: (leasesSummary?.synced ?? []).length,
+    synced: leasesSummary.synced.length,
     count: leasesCount,
     done: missingExecutionStats.done + brokenExecutionStats.done,
     failed: missingExecutionStats.failed + brokenExecutionStats.failed,

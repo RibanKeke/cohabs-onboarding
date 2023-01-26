@@ -1,5 +1,4 @@
 import { DatabaseService } from "./impl";
-import { findUserByStripeCustomerId, updateUser } from "./users";
 
 /**
  * Initialize the database connection pool
@@ -13,13 +12,12 @@ const initializeDatabase = (options: {
   password: string;
   database: string;
 }) => DatabaseService.initialize(options);
-
+export { initializeDatabase };
+export { listUsers, updateUser, findUserByStripeCustomerId } from "./users";
 export { findRoomByStripeProductId, listCohabRooms, updateRoom } from "./rooms";
 export {
   findLeaseByStripeSubscriptionId,
   listCohabLeases,
   updateLease,
 } from "./leases";
-
-export { initializeDatabase, updateUser, findUserByStripeCustomerId };
 export { Houses, Leases, Payments, Rooms, Users, LeasesView } from "./models";

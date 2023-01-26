@@ -40,6 +40,7 @@ class StripeService {
 }
 
 async function createCustomerPaymentMethod(paymentType: "card") {
+  //TODO: Fetch from database the default payment method to be attached to a user
   const stripe = StripeService.getStripe();
   const cardNumber = "5555555555554444";
   const creditCardCVV = "123";
@@ -83,7 +84,8 @@ async function updateStripeCustomer(
 }
 
 async function listStripeCustomers() {
-  return (await StripeService.getStripe().customers.list({ limit: 100 })).data;
+  const stripe = StripeService.getStripe();
+  return (await stripe.customers.list({ limit: 100 })).data;
 }
 
 async function getStripeCustomer(stripeCustomerId: string) {
@@ -114,7 +116,8 @@ async function createStripeProduct(
 }
 
 async function listStripeProducts() {
-  return (await StripeService.getStripe().products.list({ limit: 100 })).data;
+  const stripe = StripeService.getStripe();
+  return (await stripe.products.list({ limit: 100 })).data;
 }
 
 async function createStripeSubscription(
@@ -125,8 +128,8 @@ async function createStripeSubscription(
 }
 
 async function listStripeSubscription() {
-  return (await StripeService.getStripe().subscriptions.list({ limit: 100 }))
-    .data;
+  const stripe = StripeService.getStripe();
+  return (await stripe.subscriptions.list({ limit: 100 })).data;
 }
 
 export {

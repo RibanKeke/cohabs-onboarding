@@ -32,7 +32,7 @@ async function checkSubscriptionLink(
     }
     try {
       const stripeSubscription = await getStripeSubscription(
-        cohabLease.stripeSubscriptionId ?? ""
+        cohabLease.stripeSubscriptionId
       );
       if (stripeSubscription?.id === null) {
         return {
@@ -64,19 +64,15 @@ async function checkSubscriptionLink(
   const results = await Promise.all(
     cohabLeases.map((cohabLease) => execute(cohabLease))
   );
-  const broken = results.filter(
-    (resultItem) => resultItem?.status === "broken"
-  );
+  const broken = results.filter((resultItem) => resultItem.status === "broken");
 
-  const synced = results.filter(
-    (resultItem) => resultItem?.status === "synced"
-  );
+  const synced = results.filter((resultItem) => resultItem.status === "synced");
 
   const missing = results.filter(
-    (resultItem) => resultItem?.status === "missing"
+    (resultItem) => resultItem.status === "missing"
   );
 
-  const error = results.filter((resultItem) => resultItem?.status === "error");
+  const error = results.filter((resultItem) => resultItem.status === "error");
 
   return {
     broken,
@@ -93,8 +89,7 @@ function filterInvalidLeases(leases: Array<LeasesView>) {
       (lease) =>
         lease.houseId === null ||
         lease.stripeCustomerId === null ||
-        lease.stripeProductId === null ||
-        lease.userId === null
+        lease.stripeProductId === null
     )
     .map((lease) => {
       const missingHouseIdMessage = lease.houseId
@@ -162,7 +157,7 @@ async function syncStripeSubscription(
       {
         price_data: {
           currency: "eur",
-          product: cohabLease?.stripeProductId ?? "",
+          product: cohabLease.stripeProductId ?? "",
           recurring: {
             interval: "month",
           },
@@ -209,7 +204,7 @@ async function syncStripeSubscription(
       })
       .catch((err) => {
         const failedResult: UpdateResult<LeasesView> = {
-          id: cohabLease?.id,
+          id: cohabLease.id,
           status: "failed",
           target: cohabLease,
           message: err.message,
@@ -218,7 +213,7 @@ async function syncStripeSubscription(
       });
   } else {
     const simResult: UpdateResult<LeasesView> = {
-      id: cohabLease?.id,
+      id: cohabLease.id,
       status: "skipped",
       target: cohabLease,
     };

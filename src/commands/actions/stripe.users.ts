@@ -1,5 +1,9 @@
-import { findUserByStripeCustomerId, updateUser, Users } from "../../database";
-import { listCohabUsers } from "../../database/users";
+import {
+  findUserByStripeCustomerId,
+  listUsers,
+  updateUser,
+  Users,
+} from "../../database";
 import {
   NewStripeCustomer,
   createStripeCustomer,
@@ -79,7 +83,7 @@ async function checkStripeUsers(): Promise<{
   usersSummary: UsersSummary;
   usersCount: number;
 }> {
-  const cohabsUsers = await listCohabUsers();
+  const cohabsUsers = await listUsers();
   const usersCount = cohabsUsers.length;
   const missing = cohabsUsers
     .filter(
